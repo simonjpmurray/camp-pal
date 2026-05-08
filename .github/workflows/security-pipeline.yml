@@ -1,0 +1,183 @@
+name: Security Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 6 * * 1'  # Every Monday at 6am UTC
+  workflow_dispatch:
+
+jobs:
+
+  # ─────────────────────────────────────────
+  # 1. SECRET & CREDENTIAL LEAK DETECTION
+  # ─────────────────────────────────────────
+  secret-scan:
+    name: Secret Scan (Gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for thorough scan
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ─────────────────────────────────────────
+  # 2. DEPENDENCY VULNERABILITY SCAN
+  # ─────────────────────────────────────────
+  dependency-scan:
+    name: Dependency Scan (Snyk)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Snyk
+        uses: snyk/actions/node@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high --fail-on=all
+
+      - name: Upload Snyk results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: snyk-results
+          path: snyk-report.json
+
+  # ─────────────────────────────────────────
+  # 3. STATIC CODE ANALYSIS (CodeQL)
+  # ─────────────────────────────────────────
+  codeql:
+    name: Static Analysis (CodeQL)
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript, typescript
+          queries: security-extended  # Includes auth, injection, IDOR checks
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: /language:javascript
+
+  # ─────────────────────────────────────────
+  # 4. OWASP ZAP — WEB VULNERABILITY SCAN
+  # Runs weekly against staging environment
+  # ─────────────────────────────────────────
+  owasp-zap:
+    name: OWASP ZAP Scan
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run OWASP ZAP Baseline Scan
+        uses: zaproxy/action-baseline@v0.12.0
+        with:
+          target: ${{ vars.STAGING_URL }}
+          rules_file_name: '.zap/rules.tsv'
+          cmd_options: '-a'  # Include ajax spider
+          fail_action: false  # Report but don't fail (adjust once baseline established)
+
+      - name: Upload ZAP Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: zap-report
+          path: report_html.html
+
+  # ─────────────────────────────────────────
+  # 5. AUTH & SHARE LINK SECURITY CHECKS
+  # Custom checks specific to your app
+  # ─────────────────────────────────────────
+  auth-checks:
+    name: Auth & Share Link Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check for hardcoded secrets in config files
+        run: |
+          echo "Scanning for hardcoded API keys and tokens..."
+          grep -r "supabase_key\|SUPABASE_KEY\|firebase_key\|weather_api" \
+            --include="*.js" --include="*.ts" --include="*.jsx" --include="*.tsx" \
+            --include="*.json" --exclude-dir=node_modules . && \
+          echo "⚠️  Potential hardcoded secrets found!" && exit 1 || \
+          echo "✅ No hardcoded secrets found"
+
+      - name: Verify share link token entropy
+        run: |
+          echo "Checking share link token generation..."
+          # Check that crypto.randomUUID or equivalent is used, not Math.random
+          if grep -r "Math\.random" --include="*.ts" --include="*.js" \
+            --include="*.tsx" --include="*.jsx" \
+            --exclude-dir=node_modules . | grep -i "token\|invite\|link\|share"; then
+            echo "⚠️  Math.random() used for security tokens — use crypto.randomUUID() instead"
+            exit 1
+          else
+            echo "✅ No weak token generation detected"
+          fi
+
+      - name: Check auth guard on share link routes
+        run: |
+          echo "Verifying auth is enforced on invite routes..."
+          # Look for invite/join routes without auth middleware
+          if grep -r "invite\|join-trip\|share" \
+            --include="*.ts" --include="*.js" --include="*.tsx" \
+            --exclude-dir=node_modules . | grep -v "auth\|protect\|guard\|middleware"; then
+            echo "⚠️  Review: share/invite routes may be missing auth guards"
+          else
+            echo "✅ Auth guards appear present on invite routes"
+          fi
+
+  # ─────────────────────────────────────────
+  # 6. SECURITY SUMMARY REPORT
+  # ─────────────────────────────────────────
+  security-summary:
+    name: Security Summary
+    runs-on: ubuntu-latest
+    needs: [secret-scan, dependency-scan, codeql, auth-checks]
+    if: always()
+    steps:
+      - name: Report Status
+        run: |
+          echo "## Security Pipeline Results" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Secret Scan | ${{ needs.secret-scan.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Dependency Scan | ${{ needs.dependency-scan.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| CodeQL Analysis | ${{ needs.codeql.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Auth Checks | ${{ needs.auth-checks.result }} |" >> $GITHUB_STEP_SUMMARY
