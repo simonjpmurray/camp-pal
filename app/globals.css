@@ -1,0 +1,83 @@
+@import "tailwindcss";
+
+:root {
+  --background: #faf9f6;
+  --foreground: #1a1a1a;
+  --surface: #ffffff;
+  --surface-hover: #f5f4f1;
+  --border: #e7e5e0;
+  --muted: #78716c;
+  --forest: #2d5a27;
+  --forest-light: #3d7a35;
+  --forest-pale: #e8f5e2;
+  --tan: #c8a96e;
+  --tan-light: #e8d5b0;
+  --bark: #6b4c2a;
+}
+
+.dark {
+  --background: #141412;
+  --foreground: #f0ede8;
+  --surface: #1e1d1a;
+  --surface-hover: #252420;
+  --border: #2e2c28;
+  --muted: #a8a29e;
+  --forest: #4a8a42;
+  --forest-light: #5ca052;
+  --forest-pale: #1a2e18;
+  --tan: #c8a96e;
+  --tan-light: #3a2e1a;
+  --bark: #b08060;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+}
+
+* {
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.font-display {
+  font-family: Georgia, Cambria, 'Times New Roman', serif;
+  letter-spacing: -0.02em;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #c8a96e40; border-radius: 3px; }
+
+/* Dark mode auto overrides for hard-coded white/stone backgrounds */
+.dark .bg-white { background: var(--surface) !important; }
+.dark .border-stone-100,
+.dark .border-stone-200 { border-color: var(--border) !important; }
+.dark .text-stone-900 { color: var(--foreground) !important; }
+.dark .text-stone-800 { color: var(--foreground) !important; }
+.dark .text-stone-700 { color: #c8c4bc !important; }
+.dark .text-stone-600 { color: #a8a29e !important; }
+.dark .text-stone-500 { color: #8a8480 !important; }
+.dark .text-stone-400 { color: #6e6a64 !important; }
+.dark .bg-stone-50 { background: var(--surface-hover) !important; }
+.dark .bg-stone-100 { background: var(--surface-hover) !important; }
+.dark .hover\:bg-stone-50:hover { background: var(--surface-hover) !important; }
+.dark .hover\:bg-stone-100:hover { background: var(--surface-hover) !important; }
+
+/* Slide-in animation for push banner */
+@keyframes slide-in-from-bottom {
+  from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.animate-in { animation: slide-in-from-bottom 0.3s ease-out; }
+.slide-in-from-bottom-2 { animation: slide-in-from-bottom 0.3s ease-out; }
