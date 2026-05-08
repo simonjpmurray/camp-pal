@@ -1,0 +1,21 @@
+# .zap/rules.tsv
+# OWASP ZAP rule overrides for Camping Trip Organiser
+# Format: rule_id  IGNORE/WARN/FAIL  description
+#
+# Rule reference: https://www.zaproxy.org/docs/alerts/
+
+# Ignore informational alerts
+10027	IGNORE	Information Disclosure - Suspicious Comments
+10096	IGNORE	Timestamp Disclosure
+
+# Warn (don't fail) on these until baseline is established
+10020	WARN	Anti-clickjacking Header
+10038	WARN	Content Security Policy Header Not Set
+
+# Always fail on these — critical for your auth/share link model
+10202	FAIL	Absence of Anti-CSRF Tokens
+40012	FAIL	Cross Site Scripting (Reflected)
+40014	FAIL	Cross Site Scripting (Persistent)
+40018	FAIL	SQL Injection
+40022	FAIL	SQL Injection - MySQL
+90022	FAIL	Application Error Disclosure
