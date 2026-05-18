@@ -21,6 +21,16 @@ export async function POST(
   const { data: member } = await q.from('trip_members').select('id').eq('trip_id', id).eq('user_id', user.id).maybeSingle()
   if (!member) return NextResponse.json({ error: 'Not a member' }, { status: 403 })
 
+  const { count: rawMemberCount } = await q
+    .from('trip_members')
+    .select('id', { count: 'exact', head: true })
+    .eq('trip_id', id)
+  const memberCount = Math.max(1, rawMemberCount ?? 1)
+
+  const startMs = new Date(trip.start_date).getTime()
+  const endMs = new Date(trip.end_date).getTime()
+  const nightCount = Math.max(1, Math.round((endMs - startMs) / (1000 * 60 * 60 * 24)))
+
   const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString()
   const { data: cache } = await q.from('weather_cache').select('fetched_at, forecast_json').eq('trip_id', id).maybeSingle()
 
@@ -38,7 +48,11 @@ export async function POST(
 
   await q.from('packing_items').delete().eq('trip_id', id).eq('is_custom', false)
 
-  const items = generatePackingList(forecast as Parameters<typeof generatePackingList>[0])
+  const items = generatePackingList(
+    forecast as Parameters<typeof generatePackingList>[0],
+    memberCount,
+    nightCount
+  )
 
   const { error: insertErr } = await q.from('packing_items').insert(
     items.map(item => ({
@@ -49,10 +63,12 @@ export async function POST(
       is_custom: false,
       weather_highlight: item.weather_highlight,
       highlight_reason: item.highlight_reason,
+      item_type: item.item_type,
+      scaled_multiplier: item.scaled_multiplier,
     }))
   )
 
   if (insertErr) return NextResponse.json({ error: insertErr.message }, { status: 500 })
 
-  return NextResponse.json({ ok: true, itemCount: items.length })
+  return NextResponse.json({ ok: true, itemCount: items.length, memberCount, nightCount })
 }

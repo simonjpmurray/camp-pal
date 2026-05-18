@@ -2,6 +2,8 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 
 export type WeatherHighlight = 'red' | 'yellow' | 'grey'
 export type MemberRole = 'creator' | 'member'
+export type ItemType = 'group' | 'personal' | 'scaled'
+export type ScaledMultiplier = 'per_person' | 'per_night' | 'per_person_per_night'
 
 export interface Database {
   public: {
@@ -98,6 +100,8 @@ export interface Database {
           is_custom: boolean
           weather_highlight: WeatherHighlight
           highlight_reason: string | null
+          item_type: ItemType
+          scaled_multiplier: ScaledMultiplier | null
           created_at: string
         }
         Insert: {
@@ -109,6 +113,8 @@ export interface Database {
           is_custom?: boolean
           weather_highlight?: WeatherHighlight
           highlight_reason?: string | null
+          item_type?: ItemType
+          scaled_multiplier?: ScaledMultiplier | null
           created_at?: string
         }
         Update: {
@@ -117,6 +123,8 @@ export interface Database {
           quantity?: number
           weather_highlight?: WeatherHighlight
           highlight_reason?: string | null
+          item_type?: ItemType
+          scaled_multiplier?: ScaledMultiplier | null
         }
       }
       item_claims: {

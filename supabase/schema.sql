@@ -212,3 +212,15 @@ create policy "Anyone can look up trip by invite code" on public.trips for selec
 alter publication supabase_realtime add table public.messages;
 alter publication supabase_realtime add table public.item_claims;
 alter publication supabase_realtime add table public.trip_members;
+
+-- =================== MIGRATION: Item categories ===================
+-- Adds item_type and scaled_multiplier to packing_items.
+-- Run these on existing databases.
+
+alter table public.packing_items
+  add column if not exists item_type text not null default 'group'
+    check (item_type in ('group', 'personal', 'scaled'));
+
+alter table public.packing_items
+  add column if not exists scaled_multiplier text
+    check (scaled_multiplier is null or scaled_multiplier in ('per_person', 'per_night', 'per_person_per_night'));

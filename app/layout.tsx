@@ -39,7 +39,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" suppressHydrationWarning className="h-full">
       <head>
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
-        {/* eslint-disable-next-line @next/next/no-sync-scripts */}
         <script dangerouslySetInnerHTML={{ __html: darkModeScript }} />
       </head>
       <body className="min-h-full flex flex-col">{children}</body>

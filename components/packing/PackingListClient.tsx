@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import type { PackingItem } from '@/types/database'
-import { CATEGORIES } from '@/lib/packing'
-import { Plus, RefreshCw, ChevronDown, ChevronUp, Check } from 'lucide-react'
+import type { PackingItem, ItemType, ScaledMultiplier } from '@/types/database'
+import { CATEGORIES, scaleQuantity } from '@/lib/packing'
+import { Plus, RefreshCw, ChevronDown, ChevronUp, Check, Users, User as UserIcon, BarChart3 } from 'lucide-react'
 import { Avatar } from '@/components/trips/MemberList'
 
 interface Claim {
@@ -18,35 +18,106 @@ interface Claim {
   users: { id: string; name: string; avatar_url: string | null } | null
 }
 
+interface Member {
+  id: string
+  name: string
+  avatar_url: string | null
+}
+
 interface Props {
   tripId: string
   currentUserId: string
   isCreator: boolean
   initialItems: PackingItem[]
   initialClaims: Claim[]
-  members: Array<{ id: string; name: string; avatar_url: string | null }>
+  members: Member[]
+  nightCount: number
 }
 
 type Filter = 'all' | 'unclaimed' | 'mine' | 'covered'
 
 const HIGHLIGHT_COLORS = {
-  red: { bg: '#fff0f0', border: '#fecaca', badge: 'bg-red-100 text-red-700', label: '🟥 Must-bring' },
-  yellow: { bg: '#fffbf0', border: '#fde68a', badge: 'bg-amber-100 text-amber-700', label: '🟨 Recommended' },
-  grey: { bg: 'white', border: '#e7e5e4', badge: 'bg-stone-100 text-stone-500', label: '⬜ Optional' },
+  red: { bg: '#fff0f0', border: '#fecaca', badge: 'bg-red-100 text-red-700' },
+  yellow: { bg: '#fffbf0', border: '#fde68a', badge: 'bg-amber-100 text-amber-700' },
+  grey: { bg: 'white', border: '#e7e5e4', badge: 'bg-stone-100 text-stone-500' },
 }
 
-function ClaimRow({
+const TYPE_META: Record<ItemType, { label: string; pill: string; icon: typeof Users }> = {
+  group: { label: 'Group', pill: 'bg-blue-50 text-blue-700 border-blue-200', icon: Users },
+  personal: { label: 'Individual', pill: 'bg-purple-50 text-purple-700 border-purple-200', icon: UserIcon },
+  scaled: { label: 'Scaled', pill: 'bg-amber-50 text-amber-700 border-amber-200', icon: BarChart3 },
+}
+
+const SCALED_LABEL: Record<ScaledMultiplier, string> = {
+  per_person: 'per person',
+  per_night: 'per night',
+  per_person_per_night: 'per person/night',
+}
+
+const TYPE_CYCLE: ItemType[] = ['group', 'personal', 'scaled']
+
+function getItemType(item: PackingItem): ItemType {
+  return item.item_type ?? 'group'
+}
+
+function highlightLabel(level: PackingItem['weather_highlight']) {
+  return level === 'red' ? 'Must-bring' : level === 'yellow' ? 'Recommended' : 'Optional'
+}
+
+function ItemTypeBadge({
+  item,
+  isCreator,
+  onTypeChange,
+}: {
+  item: PackingItem
+  isCreator: boolean
+  onTypeChange: (newType: ItemType) => void
+}) {
+  const type = getItemType(item)
+  const meta = TYPE_META[type]
+  const Icon = meta.icon
+  const Tag = isCreator ? 'button' : 'span'
+
+  function cycle() {
+    if (!isCreator) return
+    const next = TYPE_CYCLE[(TYPE_CYCLE.indexOf(type) + 1) % TYPE_CYCLE.length]
+    onTypeChange(next)
+  }
+
+  return (
+    <Tag
+      onClick={isCreator ? cycle : undefined}
+      title={isCreator ? 'Click to change type' : `Item type: ${meta.label}`}
+      className={`inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-full border font-medium ${meta.pill} ${
+        isCreator ? 'cursor-pointer hover:opacity-80' : ''
+      }`}
+    >
+      <Icon className="w-3 h-3" />
+      {meta.label}
+    </Tag>
+  )
+}
+
+function GroupItemRow({
   item,
   claims,
   currentUserId,
   tripId,
+  isCreator,
+  memberCount,
+  nightCount,
   onClaimsChange,
+  onItemUpdate,
 }: {
   item: PackingItem
   claims: Claim[]
   currentUserId: string
   tripId: string
+  isCreator: boolean
+  memberCount: number
+  nightCount: number
   onClaimsChange: (itemId: string, newClaims: Claim[]) => void
+  onItemUpdate: (item: PackingItem) => void
 }) {
   const supabase = createClient()
   const myClaim = claims.find(c => c.user_id === currentUserId)
@@ -54,7 +125,14 @@ function ClaimRow({
   const isCovered = totalClaimed >= item.quantity
   const [editing, setEditing] = useState(false)
   const [qty, setQty] = useState(myClaim?.quantity_claimed ?? 1)
+  const [editingItemQty, setEditingItemQty] = useState(false)
+  const [itemQty, setItemQty] = useState(item.quantity)
   const [loading, setLoading] = useState(false)
+
+  const isScaled = getItemType(item) === 'scaled'
+  const suggestedQty = isScaled
+    ? scaleQuantity(1, item.scaled_multiplier, memberCount, nightCount)
+    : null
 
   async function claimItem() {
     setLoading(true)
@@ -90,13 +168,25 @@ function ClaimRow({
     setLoading(false)
   }
 
+  async function saveItemQty() {
+    setLoading(true)
+    const { data } = await supabase
+      .from('packing_items')
+      .update({ quantity: Math.max(1, itemQty) })
+      .eq('id', item.id)
+      .select()
+      .single()
+    if (data) onItemUpdate(data as PackingItem)
+    setEditingItemQty(false)
+    setLoading(false)
+  }
+
   const colors = HIGHLIGHT_COLORS[item.weather_highlight]
 
   return (
     <div className="rounded-xl border p-3.5 transition-all"
       style={{ background: colors.bg, borderColor: colors.border }}>
       <div className="flex items-start gap-3">
-        {/* Check circle */}
         <div className={`w-5 h-5 mt-0.5 rounded-full border-2 shrink-0 flex items-center justify-center transition-all ${
           isCovered ? 'border-green-500 bg-green-500' : 'border-stone-300'
         }`}>
@@ -106,16 +196,62 @@ function ClaimRow({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-medium text-sm text-stone-800">{item.name}</span>
-            {item.quantity > 1 && (
+            {item.quantity > 1 && !editingItemQty && (
               <span className="text-xs text-stone-400">×{item.quantity} needed</span>
             )}
             <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${colors.badge}`}>
-              {item.weather_highlight === 'red' ? 'Must-bring' : item.weather_highlight === 'yellow' ? 'Recommended' : 'Optional'}
+              {highlightLabel(item.weather_highlight)}
             </span>
+            <ItemTypeBadge
+              item={item}
+              isCreator={isCreator}
+              onTypeChange={async (newType) => {
+                const update: { item_type: ItemType; scaled_multiplier?: ScaledMultiplier | null } = { item_type: newType }
+                if (newType !== 'scaled') update.scaled_multiplier = null
+                else if (!item.scaled_multiplier) update.scaled_multiplier = 'per_person'
+                const { data } = await supabase
+                  .from('packing_items')
+                  .update(update)
+                  .eq('id', item.id)
+                  .select()
+                  .single()
+                if (data) onItemUpdate(data as PackingItem)
+              }}
+            />
           </div>
+
+          {isScaled && (
+            <p className="text-xs text-amber-700 mt-1">
+              Scaled {item.scaled_multiplier ? `(${SCALED_LABEL[item.scaled_multiplier]})` : ''} — suggested {suggestedQty} for {memberCount} {memberCount === 1 ? 'person' : 'people'}, {nightCount} {nightCount === 1 ? 'night' : 'nights'}
+            </p>
+          )}
 
           {item.highlight_reason && (
             <p className="text-xs text-stone-500 mt-0.5">{item.highlight_reason}</p>
+          )}
+
+          {/* Quantity override (creator-only) */}
+          {isCreator && (
+            <div className="mt-1.5">
+              {editingItemQty ? (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-stone-500">Total needed:</span>
+                  <div className="flex items-center gap-1 border border-stone-200 rounded-lg overflow-hidden bg-white">
+                    <button onClick={() => setItemQty(q => Math.max(1, q - 1))} className="px-2 py-0.5 text-stone-500 hover:bg-stone-50">−</button>
+                    <span className="px-2 text-xs font-medium text-stone-700">{itemQty}</span>
+                    <button onClick={() => setItemQty(q => q + 1)} className="px-2 py-0.5 text-stone-500 hover:bg-stone-50">+</button>
+                  </div>
+                  <button onClick={saveItemQty} disabled={loading} className="text-xs font-medium px-2 py-0.5 rounded-lg text-white" style={{ background: 'var(--forest)' }}>
+                    {loading ? '…' : 'Save'}
+                  </button>
+                  <button onClick={() => { setEditingItemQty(false); setItemQty(item.quantity) }} className="text-xs text-stone-400">Cancel</button>
+                </div>
+              ) : (
+                <button onClick={() => setEditingItemQty(true)} className="text-xs text-stone-400 underline hover:text-stone-600">
+                  Override quantity
+                </button>
+              )}
+            </div>
           )}
 
           {/* Claimers */}
@@ -135,7 +271,7 @@ function ClaimRow({
           )}
 
           {/* My claim controls */}
-          <div className="mt-2 flex items-center gap-2">
+          <div className="mt-2 flex items-center gap-2 flex-wrap">
             {!myClaim && !editing && (
               <button
                 onClick={() => setEditing(true)}
@@ -147,7 +283,7 @@ function ClaimRow({
             )}
 
             {(editing || myClaim) && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 {editing ? (
                   <>
                     <div className="flex items-center gap-1 border border-stone-200 rounded-lg overflow-hidden bg-white">
@@ -188,20 +324,183 @@ function ClaimRow({
   )
 }
 
-export default function PackingListClient({ tripId, currentUserId, isCreator, initialItems, initialClaims, members }: Props) {
+function PersonalItemRow({
+  item,
+  claims,
+  currentUserId,
+  tripId,
+  members,
+  isCreator,
+  onClaimsChange,
+  onItemUpdate,
+}: {
+  item: PackingItem
+  claims: Claim[]
+  currentUserId: string
+  tripId: string
+  members: Member[]
+  isCreator: boolean
+  onClaimsChange: (itemId: string, newClaims: Claim[]) => void
+  onItemUpdate: (item: PackingItem) => void
+}) {
+  const supabase = createClient()
+  const myClaim = claims.find(c => c.user_id === currentUserId)
+  const confirmedCount = claims.filter(c => c.confirmed).length
+  const memberCount = members.length
+  const allConfirmed = memberCount > 0 && confirmedCount >= memberCount
+  const [loading, setLoading] = useState(false)
+
+  async function confirmMine() {
+    setLoading(true)
+    const { data } = await supabase
+      .from('item_claims')
+      .insert({ item_id: item.id, trip_id: tripId, user_id: currentUserId, quantity_claimed: 1, confirmed: true })
+      .select('*, users(id, name, avatar_url)')
+      .single()
+    if (data) onClaimsChange(item.id, [...claims, data as Claim])
+    setLoading(false)
+  }
+
+  async function unconfirmMine() {
+    if (!myClaim) return
+    setLoading(true)
+    await supabase.from('item_claims').delete().eq('id', myClaim.id)
+    onClaimsChange(item.id, claims.filter(c => c.id !== myClaim.id))
+    setLoading(false)
+  }
+
+  const colors = HIGHLIGHT_COLORS[item.weather_highlight]
+
+  return (
+    <div className="rounded-xl border p-3.5 transition-all"
+      style={{ background: colors.bg, borderColor: colors.border }}>
+      <div className="flex items-start gap-3">
+        <div className={`w-5 h-5 mt-0.5 rounded-full border-2 shrink-0 flex items-center justify-center transition-all ${
+          allConfirmed ? 'border-green-500 bg-green-500' : 'border-stone-300'
+        }`}>
+          {allConfirmed && <Check className="w-3 h-3 text-white" />}
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-medium text-sm text-stone-800">{item.name}</span>
+            <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${colors.badge}`}>
+              {highlightLabel(item.weather_highlight)}
+            </span>
+            <ItemTypeBadge
+              item={item}
+              isCreator={isCreator}
+              onTypeChange={async (newType) => {
+                const update: { item_type: ItemType; scaled_multiplier?: ScaledMultiplier | null } = { item_type: newType }
+                if (newType !== 'scaled') update.scaled_multiplier = null
+                else if (!item.scaled_multiplier) update.scaled_multiplier = 'per_person'
+                const { data } = await supabase
+                  .from('packing_items')
+                  .update(update)
+                  .eq('id', item.id)
+                  .select()
+                  .single()
+                if (data) onItemUpdate(data as PackingItem)
+              }}
+            />
+          </div>
+
+          {item.highlight_reason && (
+            <p className="text-xs text-stone-500 mt-0.5">{item.highlight_reason}</p>
+          )}
+
+          {/* Per-member confirmation grid */}
+          <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+            {members.map(member => {
+              const claim = claims.find(c => c.user_id === member.id)
+              const confirmed = !!claim?.confirmed
+              const isMe = member.id === currentUserId
+              return (
+                <div
+                  key={member.id}
+                  title={`${member.name}${confirmed ? ' — packed' : ' — not yet'}`}
+                  className={`relative rounded-full ${
+                    isMe ? 'ring-2 ring-offset-1' : ''
+                  }`}
+                  style={isMe ? { boxShadow: confirmed ? 'inset 0 0 0 2px rgb(34, 197, 94)' : 'inset 0 0 0 2px rgb(214, 211, 209)' } : {}}
+                >
+                  <div className={`rounded-full ${confirmed ? 'opacity-100' : 'opacity-50 grayscale'}`}>
+                    <Avatar user={member} size="sm" />
+                  </div>
+                  {confirmed && (
+                    <span className="absolute -bottom-0.5 -right-0.5 bg-green-500 rounded-full w-3 h-3 flex items-center justify-center border border-white">
+                      <Check className="w-2 h-2 text-white" strokeWidth={3} />
+                    </span>
+                  )}
+                </div>
+              )
+            })}
+            <span className="text-xs text-stone-400 ml-1">
+              {confirmedCount}/{memberCount} confirmed
+            </span>
+          </div>
+
+          {/* My confirm/unconfirm */}
+          <div className="mt-2">
+            {!myClaim ? (
+              <button
+                onClick={confirmMine}
+                disabled={loading}
+                className="text-xs font-medium px-2.5 py-1 rounded-lg transition-colors disabled:opacity-60"
+                style={{ background: '#e8f5e2', color: 'var(--forest)' }}
+              >
+                {loading ? '…' : '✓ Mark as packed'}
+              </button>
+            ) : (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-green-700 font-medium">✓ You&apos;re bringing this</span>
+                <button
+                  onClick={unconfirmMine}
+                  disabled={loading}
+                  className="text-xs text-red-400 underline hover:text-red-600"
+                >
+                  Unmark
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default function PackingListClient({
+  tripId,
+  currentUserId,
+  isCreator,
+  initialItems,
+  initialClaims,
+  members,
+  nightCount,
+}: Props) {
   const supabase = createClient()
   const [items, setItems] = useState(initialItems)
   const [claims, setClaims] = useState(initialClaims)
   const [filter, setFilter] = useState<Filter>('all')
+  const [activeTab, setActiveTab] = useState<'group' | 'individual'>('group')
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
   const [regenerating, setRegenerating] = useState(false)
   const [addingItem, setAddingItem] = useState(false)
   const [newItemName, setNewItemName] = useState('')
   const [newItemCategory, setNewItemCategory] = useState(CATEGORIES[0])
   const [newItemQty, setNewItemQty] = useState(1)
+  const [newItemType, setNewItemType] = useState<ItemType>('group')
+  const [newItemMultiplier, setNewItemMultiplier] = useState<ScaledMultiplier>('per_person')
+
+  const memberCount = Math.max(1, members.length)
 
   function handleClaimsChange(itemId: string, newClaims: Claim[]) {
     setClaims(prev => [...prev.filter(c => c.item_id !== itemId), ...newClaims])
+  }
+
+  function handleItemUpdate(updated: PackingItem) {
+    setItems(prev => prev.map(i => i.id === updated.id ? updated : i))
   }
 
   const claimsByItem = useMemo(() => {
@@ -213,35 +512,62 @@ export default function PackingListClient({ tripId, currentUserId, isCreator, in
     return map
   }, [claims])
 
-  const filteredItems = useMemo(() => {
-    return items.filter(item => {
-      const itemClaims = claimsByItem[item.id] ?? []
-      const totalClaimed = itemClaims.reduce((s, c) => s + c.quantity_claimed, 0)
-      const isCovered = totalClaimed >= item.quantity
-      const isMine = itemClaims.some(c => c.user_id === currentUserId)
+  const isCovered = useCallback((item: PackingItem): boolean => {
+    const itemClaims = claimsByItem[item.id] ?? []
+    if (getItemType(item) === 'personal') {
+      const confirmed = itemClaims.filter(c => c.confirmed).length
+      return members.length > 0 && confirmed >= members.length
+    }
+    const total = itemClaims.reduce((s, c) => s + c.quantity_claimed, 0)
+    return total >= item.quantity
+  }, [claimsByItem, members.length])
 
-      if (filter === 'unclaimed') return !isMine
-      if (filter === 'mine') return isMine
-      if (filter === 'covered') return isCovered
-      return true
-    })
-  }, [items, claims, filter, currentUserId, claimsByItem])
+  const isMine = useCallback((item: PackingItem): boolean => {
+    return (claimsByItem[item.id] ?? []).some(c => c.user_id === currentUserId)
+  }, [claimsByItem, currentUserId])
 
-  const coveredCount = useMemo(() => {
-    return items.filter(item => {
-      const itemClaims = claimsByItem[item.id] ?? []
-      return itemClaims.reduce((s, c) => s + c.quantity_claimed, 0) >= item.quantity
-    }).length
-  }, [items, claimsByItem])
+  const passesFilter = useCallback((item: PackingItem): boolean => {
+    if (filter === 'unclaimed') return !isMine(item)
+    if (filter === 'mine') return isMine(item)
+    if (filter === 'covered') return isCovered(item)
+    return true
+  }, [filter, isMine, isCovered])
 
-  const categorisedItems = useMemo(() => {
+  const groupItems = useMemo(
+    () => items.filter(i => getItemType(i) !== 'personal').filter(passesFilter),
+    [items, passesFilter]
+  )
+
+  const personalItems = useMemo(
+    () => items.filter(i => getItemType(i) === 'personal').filter(passesFilter),
+    [items, passesFilter]
+  )
+
+  const groupCovered = useMemo(
+    () => items.filter(i => getItemType(i) !== 'personal' && isCovered(i)).length,
+    [items, isCovered]
+  )
+  const groupTotal = items.filter(i => getItemType(i) !== 'personal').length
+
+  const personalConfirmedByMe = useMemo(
+    () => items.filter(i => getItemType(i) === 'personal' && isMine(i)).length,
+    [items, isMine]
+  )
+  const personalTotal = items.filter(i => getItemType(i) === 'personal').length
+
+  function categorise(list: PackingItem[]): Record<string, PackingItem[]> {
     const cats: Record<string, PackingItem[]> = {}
-    filteredItems.forEach(item => {
+    list.forEach(item => {
       if (!cats[item.category]) cats[item.category] = []
       cats[item.category].push(item)
     })
     return cats
-  }, [filteredItems])
+  }
+
+  function orderedKeys(cats: Record<string, PackingItem[]>): string[] {
+    return CATEGORIES.filter(c => cats[c]?.length > 0)
+      .concat(Object.keys(cats).filter(c => !CATEGORIES.includes(c)))
+  }
 
   async function regenerate() {
     setRegenerating(true)
@@ -251,47 +577,105 @@ export default function PackingListClient({ tripId, currentUserId, isCreator, in
 
   async function addCustomItem() {
     if (!newItemName.trim()) return
-    const { data } = await supabase.from('packing_items').insert({
+    const insert = {
       trip_id: tripId,
       category: newItemCategory,
       name: newItemName.trim(),
       quantity: newItemQty,
       is_custom: true,
-      weather_highlight: 'grey',
-    }).select().single()
+      weather_highlight: 'grey' as const,
+      item_type: newItemType,
+      scaled_multiplier: newItemType === 'scaled' ? newItemMultiplier : null,
+    }
+    const { data } = await supabase.from('packing_items').insert(insert).select().single()
     if (data) {
       setItems(prev => [...prev, data])
       setNewItemName('')
       setNewItemQty(1)
+      setNewItemType('group')
       setAddingItem(false)
     }
   }
 
-  const orderedCategories = CATEGORIES.filter(c => categorisedItems[c]?.length > 0)
-    .concat(Object.keys(categorisedItems).filter(c => !CATEGORIES.includes(c)))
+  function renderCategorySection(
+    list: PackingItem[],
+    keyPrefix: string,
+    renderItem: (item: PackingItem) => React.ReactNode
+  ) {
+    const cats = categorise(list)
+    const keys = orderedKeys(cats)
+    if (keys.length === 0) {
+      return (
+        <div className="bg-white rounded-2xl border border-stone-100 p-6 text-center text-sm text-stone-400">
+          No items match the current filter.
+        </div>
+      )
+    }
+    return (
+      <div className="space-y-3">
+        {keys.map(category => {
+          const catItems = cats[category] ?? []
+          const sectionKey = `${keyPrefix}:${category}`
+          const isOpen = activeCategory === null || activeCategory === sectionKey
+          return (
+            <div key={sectionKey} className="bg-white rounded-2xl border border-stone-100 overflow-hidden">
+              <button
+                onClick={() => setActiveCategory(isOpen && activeCategory === sectionKey ? null : sectionKey)}
+                className="w-full flex items-center justify-between px-4 py-3 hover:bg-stone-50 transition-colors"
+              >
+                <span className="font-semibold text-sm text-stone-700">{category}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-stone-400">{catItems.length} items</span>
+                  {activeCategory === sectionKey
+                    ? <ChevronUp className="w-4 h-4 text-stone-400" />
+                    : <ChevronDown className="w-4 h-4 text-stone-400" />}
+                </div>
+              </button>
+              {isOpen && (
+                <div className="px-3 pb-3 space-y-2">
+                  {catItems
+                    .slice()
+                    .sort((a, b) => {
+                      const order = { red: 0, yellow: 1, grey: 2 }
+                      return order[a.weather_highlight] - order[b.weather_highlight]
+                    })
+                    .map(renderItem)}
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    )
+  }
 
   return (
     <div>
       {/* Summary bar */}
-      <div className="bg-white rounded-2xl border border-stone-100 p-4 mb-4 flex items-center justify-between">
-        <div>
-          <span className="font-semibold text-sm" style={{ color: 'var(--foreground)' }}>
-            {coveredCount} of {items.length} items fully covered
-          </span>
-          <div className="text-xs text-stone-400 mt-0.5">
-            {items.filter(i => i.weather_highlight === 'red').length} must-bring · {items.filter(i => i.weather_highlight === 'yellow').length} recommended
+      <div className="bg-white rounded-2xl border border-stone-100 p-4 mb-4">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>
+              <span className="inline-flex items-center gap-1.5"><Users className="w-4 h-4 text-blue-600" /> {groupCovered}/{groupTotal} group items covered</span>
+            </div>
+            <div className="text-sm font-semibold mt-1" style={{ color: 'var(--foreground)' }}>
+              <span className="inline-flex items-center gap-1.5"><UserIcon className="w-4 h-4 text-purple-600" /> {personalConfirmedByMe}/{personalTotal} individual items packed by you</span>
+            </div>
+            <div className="text-xs text-stone-400 mt-1">
+              {memberCount} {memberCount === 1 ? 'person' : 'people'} · {nightCount} {nightCount === 1 ? 'night' : 'nights'}
+            </div>
           </div>
+          {isCreator && (
+            <button
+              onClick={regenerate}
+              disabled={regenerating}
+              className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-xl border border-stone-200 hover:bg-stone-50 transition-colors disabled:opacity-50 shrink-0"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${regenerating ? 'animate-spin' : ''}`} />
+              Regenerate
+            </button>
+          )}
         </div>
-        {isCreator && (
-          <button
-            onClick={regenerate}
-            disabled={regenerating}
-            className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-xl border border-stone-200 hover:bg-stone-50 transition-colors disabled:opacity-50"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${regenerating ? 'animate-spin' : ''}`} />
-            Regenerate
-          </button>
-        )}
       </div>
 
       {/* Filters */}
@@ -310,50 +694,72 @@ export default function PackingListClient({ tripId, currentUserId, isCreator, in
         ))}
       </div>
 
-      {/* Items by category */}
-      <div className="space-y-3">
-        {orderedCategories.map(category => {
-          const catItems = categorisedItems[category] ?? []
-          const isOpen = activeCategory === null || activeCategory === category
-
-          return (
-            <div key={category} className="bg-white rounded-2xl border border-stone-100 overflow-hidden">
-              <button
-                onClick={() => setActiveCategory(isOpen && activeCategory === category ? null : category)}
-                className="w-full flex items-center justify-between px-4 py-3 hover:bg-stone-50 transition-colors"
-              >
-                <span className="font-semibold text-sm text-stone-700">{category}</span>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-stone-400">{catItems.length} items</span>
-                  {activeCategory === category
-                    ? <ChevronUp className="w-4 h-4 text-stone-400" />
-                    : <ChevronDown className="w-4 h-4 text-stone-400" />}
-                </div>
-              </button>
-
-              {(activeCategory === null || activeCategory === category) && (
-                <div className="px-3 pb-3 space-y-2">
-                  {catItems
-                    .sort((a, b) => {
-                      const order = { red: 0, yellow: 1, grey: 2 }
-                      return order[a.weather_highlight] - order[b.weather_highlight]
-                    })
-                    .map(item => (
-                      <ClaimRow
-                        key={item.id}
-                        item={item}
-                        claims={claimsByItem[item.id] ?? []}
-                        currentUserId={currentUserId}
-                        tripId={tripId}
-                        onClaimsChange={handleClaimsChange}
-                      />
-                    ))}
-                </div>
-              )}
-            </div>
-          )
-        })}
+      {/* Kit tabs */}
+      <div className="flex gap-2 mb-4 border-b border-stone-200">
+        <button
+          onClick={() => setActiveTab('group')}
+          className={`flex items-center gap-1.5 text-sm font-semibold px-4 py-2.5 -mb-px border-b-2 transition-colors ${
+            activeTab === 'group'
+              ? 'border-blue-600 text-blue-700'
+              : 'border-transparent text-stone-500 hover:text-stone-700'
+          }`}
+        >
+          <Users className="w-4 h-4" />
+          Group Kit
+          <span className="text-xs font-medium text-stone-400">({groupTotal})</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('individual')}
+          className={`flex items-center gap-1.5 text-sm font-semibold px-4 py-2.5 -mb-px border-b-2 transition-colors ${
+            activeTab === 'individual'
+              ? 'border-purple-600 text-purple-700'
+              : 'border-transparent text-stone-500 hover:text-stone-700'
+          }`}
+        >
+          <UserIcon className="w-4 h-4" />
+          Individual Kit
+          <span className="text-xs font-medium text-stone-400">({personalTotal})</span>
+        </button>
       </div>
+
+      {activeTab === 'group' && (
+        <div className="mb-6">
+          <div className="text-xs text-stone-400 mb-2 px-1">Shared equipment & supplies</div>
+          {renderCategorySection(groupItems, 'group', (item) => (
+            <GroupItemRow
+              key={item.id}
+              item={item}
+              claims={claimsByItem[item.id] ?? []}
+              currentUserId={currentUserId}
+              tripId={tripId}
+              isCreator={isCreator}
+              memberCount={memberCount}
+              nightCount={nightCount}
+              onClaimsChange={handleClaimsChange}
+              onItemUpdate={handleItemUpdate}
+            />
+          ))}
+        </div>
+      )}
+
+      {activeTab === 'individual' && (
+        <div className="mb-6">
+          <div className="text-xs text-stone-400 mb-2 px-1">Each member brings their own</div>
+          {renderCategorySection(personalItems, 'personal', (item) => (
+            <PersonalItemRow
+              key={item.id}
+              item={item}
+              claims={claimsByItem[item.id] ?? []}
+              currentUserId={currentUserId}
+              tripId={tripId}
+              members={members}
+              isCreator={isCreator}
+              onClaimsChange={handleClaimsChange}
+              onItemUpdate={handleItemUpdate}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Add custom item */}
       <div className="mt-4">
@@ -376,20 +782,42 @@ export default function PackingListClient({ tripId, currentUserId, isCreator, in
               onFocus={e => e.target.style.boxShadow = '0 0 0 2px #2d5a2740'}
               onBlur={e => e.target.style.boxShadow = ''}
             />
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               <select
                 value={newItemCategory}
                 onChange={e => setNewItemCategory(e.target.value)}
-                className="flex-1 border border-stone-200 rounded-xl px-3 py-2 text-sm outline-none bg-white"
+                className="flex-1 min-w-[140px] border border-stone-200 rounded-xl px-3 py-2 text-sm outline-none bg-white"
               >
                 {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
-              <div className="flex items-center gap-1 border border-stone-200 rounded-xl overflow-hidden">
-                <button onClick={() => setNewItemQty(q => Math.max(1, q - 1))} className="px-3 py-2 text-stone-500 hover:bg-stone-50">−</button>
-                <span className="px-2 text-sm font-medium">{newItemQty}</span>
-                <button onClick={() => setNewItemQty(q => q + 1)} className="px-3 py-2 text-stone-500 hover:bg-stone-50">+</button>
-              </div>
+              <select
+                value={newItemType}
+                onChange={e => setNewItemType(e.target.value as ItemType)}
+                className="border border-stone-200 rounded-xl px-3 py-2 text-sm outline-none bg-white"
+              >
+                <option value="group">👥 Group</option>
+                <option value="personal">👤 Individual</option>
+                <option value="scaled">📊 Scaled</option>
+              </select>
+              {newItemType !== 'scaled' && (
+                <div className="flex items-center gap-1 border border-stone-200 rounded-xl overflow-hidden">
+                  <button onClick={() => setNewItemQty(q => Math.max(1, q - 1))} className="px-3 py-2 text-stone-500 hover:bg-stone-50">−</button>
+                  <span className="px-2 text-sm font-medium">{newItemQty}</span>
+                  <button onClick={() => setNewItemQty(q => q + 1)} className="px-3 py-2 text-stone-500 hover:bg-stone-50">+</button>
+                </div>
+              )}
             </div>
+            {newItemType === 'scaled' && (
+              <select
+                value={newItemMultiplier}
+                onChange={e => setNewItemMultiplier(e.target.value as ScaledMultiplier)}
+                className="w-full border border-stone-200 rounded-xl px-3 py-2 text-sm outline-none bg-white"
+              >
+                <option value="per_person">Per person</option>
+                <option value="per_night">Per night</option>
+                <option value="per_person_per_night">Per person per night</option>
+              </select>
+            )}
             <div className="flex gap-2">
               <button
                 onClick={addCustomItem}

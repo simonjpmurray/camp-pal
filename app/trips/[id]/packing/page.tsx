@@ -13,11 +13,18 @@ export default async function PackingPage({ params }: { params: Promise<{ id: st
 
   const { data: trip } = await supabase
     .from('trips')
-    .select('id, name, creator_id')
+    .select('id, name, creator_id, start_date, end_date')
     .eq('id', id)
     .single()
 
   if (!trip) notFound()
+
+  const nightCount = Math.max(
+    1,
+    Math.round(
+      (new Date(trip.end_date).getTime() - new Date(trip.start_date).getTime()) / (1000 * 60 * 60 * 24)
+    )
+  )
 
   const { data: membership } = await supabase
     .from('trip_members')
@@ -66,6 +73,7 @@ export default async function PackingPage({ params }: { params: Promise<{ id: st
           initialItems={items ?? []}
           initialClaims={(claims ?? []) as Array<{ id: string; item_id: string; trip_id: string; user_id: string; quantity_claimed: number; confirmed: boolean; created_at: string; users: { id: string; name: string; avatar_url: string | null } | null }>}
           members={(members ?? []).map(m => m.users).filter(Boolean) as unknown as Array<{ id: string; name: string; avatar_url: string | null }>}
+          nightCount={nightCount}
         />
       </main>
     </div>
