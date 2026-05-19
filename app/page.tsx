@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Tent, Users, CloudSun, MessageCircle, MapPin, Shield } from 'lucide-react'
+import { Tent, Flame, Users, CloudSun, MessageCircle, MapPin, Shield } from 'lucide-react'
 
 export default function LandingPage() {
   return (
@@ -7,7 +7,7 @@ export default function LandingPage() {
       {/* Nav */}
       <nav className="flex items-center justify-between px-6 py-4 max-w-6xl mx-auto">
         <div className="flex items-center gap-2">
-          <Tent className="w-7 h-7" style={{ color: 'var(--forest)' }} />
+          <Flame className="w-7 h-7" style={{ color: 'var(--forest)' }} />
           <span className="font-display text-xl font-semibold" style={{ color: 'var(--forest)' }}>CampFire</span>
         </div>
         <div className="flex items-center gap-3">
@@ -25,7 +25,7 @@ export default function LandingPage() {
       <section className="px-6 pt-16 pb-24 max-w-4xl mx-auto text-center">
         <div className="inline-flex items-center gap-2 text-xs font-medium px-3 py-1 rounded-full mb-8"
           style={{ background: '#e8d5b0', color: '#6b4c2a' }}>
-          <span>🌲</span> Plan smarter, camp better
+          <span>🔥</span> Plan smarter, camp better
         </div>
         <h1 className="font-display text-5xl sm:text-6xl font-bold leading-tight mb-6" style={{ color: 'var(--foreground)' }}>
           Your group camping trip,
@@ -56,7 +56,7 @@ export default function LandingPage() {
               icon: <CloudSun className="w-6 h-6" />,
               title: 'Weather-Smart Packing',
               desc: 'Fetches your trip forecast and flags must-bring items. Rain jacket gets a red badge if rain is expected — no guesswork.',
-              bg: '#e8f5e2', fg: '#2d5a27',
+              bg: '#fbe9d8', fg: '#c0532a',
             },
             {
               icon: <Users className="w-6 h-6" />,
@@ -103,7 +103,7 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="border-t border-stone-200 py-8 px-6 text-center text-sm text-stone-500">
         <div className="flex items-center justify-center gap-2 mb-2">
-          <Tent className="w-4 h-4" style={{ color: 'var(--forest)' }} />
+          <Flame className="w-4 h-4" style={{ color: 'var(--forest)' }} />
           <span className="font-display font-semibold" style={{ color: 'var(--forest)' }}>CampFire</span>
         </div>
         <p>Plan your adventure. Leave no item behind.</p>

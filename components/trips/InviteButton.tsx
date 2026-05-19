@@ -20,7 +20,7 @@ export default function InviteButton({ inviteUrl }: { inviteUrl: string }) {
       <button
         onClick={handleCopy}
         className="flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-xl transition-all shrink-0"
-        style={{ background: copied ? '#e8f5e2' : 'var(--forest)', color: copied ? 'var(--forest)' : 'white' }}
+        style={{ background: copied ? '#fbe9d8' : 'var(--forest)', color: copied ? 'var(--forest)' : 'white' }}
       >
         {copied ? <Check className="w-3.5 h-3.5" /> : <Link className="w-3.5 h-3.5" />}
         {copied ? 'Copied!' : 'Copy link'}

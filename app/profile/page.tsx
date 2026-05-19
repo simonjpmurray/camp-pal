@@ -61,7 +61,7 @@ export default function ProfilePage() {
   return (
     <div className="flex min-h-screen" style={{ background: 'var(--background)' }}>
       <AppNav />
-      <main className="flex-1 px-4 sm:px-6 py-6 pb-24 md:pb-6 max-w-xl">
+      <main className="flex-1 mx-auto w-full px-4 sm:px-6 py-6 pb-24 md:pb-6 max-w-2xl">
         <h1 className="font-display text-3xl font-bold mb-8" style={{ color: 'var(--foreground)' }}>Profile</h1>
 
         <form onSubmit={handleSave} className="space-y-5">
@@ -74,7 +74,7 @@ export default function ProfilePage() {
                 onChange={e => setName(e.target.value)}
                 required
                 className="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm outline-none transition-shadow"
-                onFocus={e => e.target.style.boxShadow = '0 0 0 2px #2d5a2740'}
+                onFocus={e => e.target.style.boxShadow = '0 0 0 2px #c0532a40'}
                 onBlur={e => e.target.style.boxShadow = ''}
               />
             </div>
@@ -95,7 +95,7 @@ export default function ProfilePage() {
             disabled={saving || saved}
             className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-medium text-sm transition-all disabled:opacity-80"
             style={{
-              background: saved ? '#e8f5e2' : 'var(--forest)',
+              background: saved ? '#fbe9d8' : 'var(--forest)',
               color: saved ? 'var(--forest)' : 'white',
             }}
           >

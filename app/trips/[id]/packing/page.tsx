@@ -55,7 +55,7 @@ export default async function PackingPage({ params }: { params: Promise<{ id: st
   return (
     <div className="flex min-h-screen" style={{ background: 'var(--background)' }}>
       <AppNav />
-      <main className="flex-1 px-4 sm:px-6 py-6 pb-24 md:pb-6 max-w-3xl">
+      <main className="flex-1 mx-auto w-full px-4 sm:px-6 py-6 pb-24 md:pb-6 max-w-5xl">
         <div className="flex items-center gap-3 mb-6">
           <Link href={`/trips/${id}`} className="p-2 rounded-xl hover:bg-stone-100 transition-colors">
             <ArrowLeft className="w-4 h-4 text-stone-500" />

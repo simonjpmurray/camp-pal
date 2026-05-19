@@ -61,7 +61,7 @@ export default function PushSetup() {
       <div className="bg-white rounded-2xl border border-stone-100 shadow-xl p-4">
         <div className="flex items-start gap-3">
           <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-            style={{ background: '#e8f5e2' }}>
+            style={{ background: '#fbe9d8' }}>
             <Bell className="w-5 h-5" style={{ color: 'var(--forest)' }} />
           </div>
           <div className="flex-1 min-w-0">

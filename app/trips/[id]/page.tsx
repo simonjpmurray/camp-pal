@@ -65,7 +65,7 @@ export default async function TripDetailPage({ params }: { params: Promise<{ id:
   return (
     <div className="flex min-h-screen" style={{ background: 'var(--background)' }}>
       <AppNav />
-      <main className="flex-1 px-4 sm:px-6 py-6 pb-24 md:pb-6 max-w-3xl">
+      <main className="flex-1 mx-auto w-full px-4 sm:px-6 py-6 pb-24 md:pb-6 max-w-5xl">
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">
           <Link href="/dashboard" className="p-2 rounded-xl hover:bg-stone-100 transition-colors">
@@ -159,7 +159,7 @@ export default async function TripDetailPage({ params }: { params: Promise<{ id:
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-xl"
-            style={{ background: '#e8f5e2', color: 'var(--forest)' }}
+            style={{ background: '#fbe9d8', color: 'var(--forest)' }}
           >
             <ExternalLink className="w-3.5 h-3.5" />
             Maps

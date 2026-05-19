@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Tent, Mail, Lock, AlertCircle } from 'lucide-react'
+import { Flame, Mail, Lock, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 
 function LoginForm() {
@@ -74,7 +74,7 @@ function LoginForm() {
       style={{ background: 'var(--background)' }}>
       <div className="w-full max-w-sm">
         <Link href="/" className="flex items-center justify-center gap-2 mb-8">
-          <Tent className="w-8 h-8" style={{ color: 'var(--forest)' }} />
+          <Flame className="w-8 h-8" style={{ color: 'var(--forest)' }} />
           <span className="font-display text-2xl font-semibold" style={{ color: 'var(--forest)' }}>CampFire</span>
         </Link>
 
@@ -110,7 +110,7 @@ function LoginForm() {
                   required
                   placeholder="Your name"
                   className="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm outline-none transition-shadow"
-                  onFocus={e => e.target.style.boxShadow = '0 0 0 2px #2d5a2740'}
+                  onFocus={e => e.target.style.boxShadow = '0 0 0 2px #c0532a40'}
                   onBlur={e => e.target.style.boxShadow = ''}
                 />
               </div>
@@ -127,7 +127,7 @@ function LoginForm() {
                   required
                   placeholder="you@example.com"
                   className="w-full border border-stone-200 rounded-xl pl-10 pr-4 py-2.5 text-sm outline-none transition-shadow"
-                  onFocus={e => e.target.style.boxShadow = '0 0 0 2px #2d5a2740'}
+                  onFocus={e => e.target.style.boxShadow = '0 0 0 2px #c0532a40'}
                   onBlur={e => e.target.style.boxShadow = ''}
                 />
               </div>
@@ -145,7 +145,7 @@ function LoginForm() {
                   minLength={6}
                   placeholder="••••••••"
                   className="w-full border border-stone-200 rounded-xl pl-10 pr-4 py-2.5 text-sm outline-none transition-shadow"
-                  onFocus={e => e.target.style.boxShadow = '0 0 0 2px #2d5a2740'}
+                  onFocus={e => e.target.style.boxShadow = '0 0 0 2px #c0532a40'}
                   onBlur={e => e.target.style.boxShadow = ''}
                 />
               </div>

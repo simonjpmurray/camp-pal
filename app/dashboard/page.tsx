@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import AppNav from '@/components/ui/AppNav'
 import { format, differenceInDays, isFuture, isPast } from 'date-fns'
-import { MapPin, Calendar, Users, Plus, Tent } from 'lucide-react'
+import { MapPin, Calendar, Users, Plus, Flame } from 'lucide-react'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -78,7 +78,7 @@ export default async function DashboardPage() {
 
         {daysUntil > 0 && (
           <div className="mt-3 text-xs font-medium px-2.5 py-1 rounded-full inline-block"
-            style={{ background: '#e8f5e2', color: 'var(--forest)' }}>
+            style={{ background: '#fbe9d8', color: 'var(--forest)' }}>
             {daysUntil === 1 ? 'Tomorrow!' : `${daysUntil} days away`}
           </div>
         )}
@@ -94,7 +94,7 @@ export default async function DashboardPage() {
   return (
     <div className="flex min-h-screen" style={{ background: 'var(--background)' }}>
       <AppNav />
-      <main className="flex-1 px-4 sm:px-6 py-6 pb-24 md:pb-6 max-w-4xl">
+      <main className="flex-1 mx-auto w-full px-4 sm:px-6 py-6 pb-24 md:pb-6 max-w-5xl">
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="font-display text-3xl font-bold" style={{ color: 'var(--foreground)' }}>Your Trips</h1>
@@ -112,8 +112,8 @@ export default async function DashboardPage() {
 
         {trips.length === 0 && (
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4" style={{ background: '#e8f5e2' }}>
-              <Tent className="w-8 h-8" style={{ color: 'var(--forest)' }} />
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4" style={{ background: '#fbe9d8' }}>
+              <Flame className="w-8 h-8" style={{ color: 'var(--forest)' }} />
             </div>
             <h2 className="font-display text-xl font-semibold mb-2" style={{ color: 'var(--foreground)' }}>Plan your first adventure</h2>
             <p className="text-stone-500 text-sm mb-6 max-w-xs">

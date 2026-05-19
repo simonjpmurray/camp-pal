@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Tent, MapPin, Calendar, Users, AlertCircle } from 'lucide-react'
+import { Flame, MapPin, Calendar, Users, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 import { format } from 'date-fns'
 
@@ -84,7 +84,7 @@ export default function JoinClient({ trip, code, isLoggedIn }: Props) {
     <div className="min-h-screen flex items-center justify-center px-4" style={{ background: 'var(--background)' }}>
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <Tent className="w-10 h-10 mx-auto mb-3" style={{ color: 'var(--forest)' }} />
+          <Flame className="w-10 h-10 mx-auto mb-3" style={{ color: 'var(--forest)' }} />
           <p className="text-stone-500 text-sm">You&apos;re invited to join</p>
           <h1 className="font-display text-3xl font-bold mt-1" style={{ color: 'var(--foreground)' }}>{trip.name}</h1>
         </div>

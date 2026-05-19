@@ -125,7 +125,7 @@ export default function LocationPicker({ value, onChange }: Props) {
           onChange={handleQueryChange}
           placeholder="Search for a campsite or location…"
           className="w-full border border-stone-200 rounded-xl pl-10 pr-4 py-2.5 text-sm outline-none transition-shadow"
-          onFocus={e => e.target.style.boxShadow = '0 0 0 2px #2d5a2740'}
+          onFocus={e => e.target.style.boxShadow = '0 0 0 2px #c0532a40'}
           onBlur={e => { e.target.style.boxShadow = ''; setTimeout(() => setResults([]), 200) }}
         />
         {searching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-stone-400" />}

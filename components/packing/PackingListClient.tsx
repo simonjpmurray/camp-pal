@@ -276,7 +276,7 @@ function GroupItemRow({
               <button
                 onClick={() => setEditing(true)}
                 className="text-xs font-medium px-2.5 py-1 rounded-lg transition-colors"
-                style={{ background: '#e8f5e2', color: 'var(--forest)' }}
+                style={{ background: '#fbe9d8', color: 'var(--forest)' }}
               >
                 + I&apos;ll bring this
               </button>
@@ -447,7 +447,7 @@ function PersonalItemRow({
                 onClick={confirmMine}
                 disabled={loading}
                 className="text-xs font-medium px-2.5 py-1 rounded-lg transition-colors disabled:opacity-60"
-                style={{ background: '#e8f5e2', color: 'var(--forest)' }}
+                style={{ background: '#fbe9d8', color: 'var(--forest)' }}
               >
                 {loading ? '…' : '✓ Mark as packed'}
               </button>
@@ -779,7 +779,7 @@ export default function PackingListClient({
               onChange={e => setNewItemName(e.target.value)}
               placeholder="Item name"
               className="w-full border border-stone-200 rounded-xl px-3 py-2 text-sm outline-none"
-              onFocus={e => e.target.style.boxShadow = '0 0 0 2px #2d5a2740'}
+              onFocus={e => e.target.style.boxShadow = '0 0 0 2px #c0532a40'}
               onBlur={e => e.target.style.boxShadow = ''}
             />
             <div className="flex gap-2 flex-wrap">
