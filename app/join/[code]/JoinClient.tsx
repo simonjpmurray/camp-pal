@@ -73,7 +73,7 @@ export default function JoinClient({ trip, code, isLoggedIn }: Props) {
           <h1 className="font-display text-2xl font-bold mb-2" style={{ color: 'var(--foreground)' }}>Invite not found</h1>
           <p className="text-stone-500 text-sm mb-6">This invite link may have expired or is invalid.</p>
           <Link href="/" className="text-sm font-medium" style={{ color: 'var(--forest)' }}>
-            Go to Camp Pal →
+            Go to CampFire →
           </Link>
         </div>
       </div>

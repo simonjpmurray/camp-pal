@@ -2,13 +2,13 @@ import type { Metadata, Viewport } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Camp Pal — Plan your adventure together',
+  title: 'CampFire — Plan your adventure together',
   description: 'Coordinate camping trips with your crew. Smart packing lists, group chat, and weather-aware gear suggestions.',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'Camp Pal',
+    title: 'CampFire',
   },
 }
 

@@ -75,7 +75,7 @@ function LoginForm() {
       <div className="w-full max-w-sm">
         <Link href="/" className="flex items-center justify-center gap-2 mb-8">
           <Tent className="w-8 h-8" style={{ color: 'var(--forest)' }} />
-          <span className="font-display text-2xl font-semibold" style={{ color: 'var(--forest)' }}>Camp Pal</span>
+          <span className="font-display text-2xl font-semibold" style={{ color: 'var(--forest)' }}>CampFire</span>
         </Link>
 
         <div className="bg-white rounded-2xl shadow-sm border border-stone-100 p-8">
@@ -83,7 +83,7 @@ function LoginForm() {
             {mode === 'login' ? 'Welcome back' : 'Create account'}
           </h1>
           <p className="text-sm text-stone-500 mb-6">
-            {mode === 'login' ? 'Sign in to your Camp Pal account' : 'Start planning your next adventure'}
+            {mode === 'login' ? 'Sign in to your CampFire account' : 'Start planning your next adventure'}
           </p>
 
           {error && (

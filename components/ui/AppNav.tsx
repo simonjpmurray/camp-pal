@@ -32,7 +32,7 @@ export default function AppNav() {
         style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
         <Link href="/dashboard" className="flex items-center gap-2 px-3 mb-8">
           <Tent className="w-6 h-6" style={{ color: 'var(--forest)' }} />
-          <span className="font-display text-lg font-semibold" style={{ color: 'var(--forest)' }}>Camp Pal</span>
+          <span className="font-display text-lg font-semibold" style={{ color: 'var(--forest)' }}>CampFire</span>
         </Link>
 
         <Link

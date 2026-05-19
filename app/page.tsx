@@ -8,7 +8,7 @@ export default function LandingPage() {
       <nav className="flex items-center justify-between px-6 py-4 max-w-6xl mx-auto">
         <div className="flex items-center gap-2">
           <Tent className="w-7 h-7" style={{ color: 'var(--forest)' }} />
-          <span className="font-display text-xl font-semibold" style={{ color: 'var(--forest)' }}>Camp Pal</span>
+          <span className="font-display text-xl font-semibold" style={{ color: 'var(--forest)' }}>CampFire</span>
         </div>
         <div className="flex items-center gap-3">
           <Link href="/login" className="text-sm text-stone-600 hover:text-stone-900 transition-colors px-3 py-2">
@@ -33,7 +33,7 @@ export default function LandingPage() {
           <span style={{ color: 'var(--forest)' }}>perfectly coordinated.</span>
         </h1>
         <p className="text-lg text-stone-600 max-w-2xl mx-auto mb-10">
-          Camp Pal helps friend groups plan camping trips together — shared packing lists with weather-smart gear suggestions, real-time chat, and no more &ldquo;who&rsquo;s bringing the stove?&rdquo; chaos.
+          CampFire helps friend groups plan camping trips together — shared packing lists with weather-smart gear suggestions, real-time chat, and no more &ldquo;who&rsquo;s bringing the stove?&rdquo; chaos.
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Link href="/login?signup=true"
@@ -104,7 +104,7 @@ export default function LandingPage() {
       <footer className="border-t border-stone-200 py-8 px-6 text-center text-sm text-stone-500">
         <div className="flex items-center justify-center gap-2 mb-2">
           <Tent className="w-4 h-4" style={{ color: 'var(--forest)' }} />
-          <span className="font-display font-semibold" style={{ color: 'var(--forest)' }}>Camp Pal</span>
+          <span className="font-display font-semibold" style={{ color: 'var(--forest)' }}>CampFire</span>
         </div>
         <p>Plan your adventure. Leave no item behind.</p>
       </footer>

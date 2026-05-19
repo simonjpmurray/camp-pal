@@ -1,6 +1,6 @@
 {
-  "name": "Camp Pal",
-  "short_name": "Camp Pal",
+  "name": "CampFire",
+  "short_name": "CampFire",
   "description": "Plan your group camping trips together",
   "start_url": "/dashboard",
   "display": "standalone",
