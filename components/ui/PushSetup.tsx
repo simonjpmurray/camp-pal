@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { registerServiceWorker, subscribeToPush, savePushSubscription, requestNotificationPermission } from '@/lib/push'
-import { Bell, BellOff, X } from 'lucide-react'
+import { Bell, X } from 'lucide-react'
 
 export default function PushSetup() {
   const [showBanner, setShowBanner] = useState(false)

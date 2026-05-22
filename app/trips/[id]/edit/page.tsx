@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useTransition } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import AppNav from '@/components/ui/AppNav'
 import LocationPicker from '@/components/map/LocationPicker'
 import { ArrowLeft, Loader2, Trash2 } from 'lucide-react'
 import Link from 'next/link'
+import { updateTrip, deleteTrip } from './actions'
 
 interface Location { name: string; lat: number; lng: number }
 
@@ -22,8 +23,8 @@ export default function EditTripPage() {
   const [endDate, setEndDate] = useState('')
   const [description, setDescription] = useState('')
   const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [isPending, startTransition] = useTransition()
 
   useEffect(() => {
     async function load() {
@@ -49,37 +50,34 @@ export default function EditTripPage() {
     load()
   }, [id]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  async function handleSave(e: React.FormEvent) {
+  function handleSave(e: React.FormEvent) {
     e.preventDefault()
     if (!location) { setError('Please select a location'); return }
-    setSaving(true)
     setError('')
 
-    const { error: err } = await supabase
-      .from('trips')
-      .update({
+    startTransition(async () => {
+      const result = await updateTrip({
+        id,
         name,
-        location_name: location.name,
+        locationName: location.name,
         lat: location.lat,
         lng: location.lng,
-        start_date: startDate,
-        end_date: endDate,
-        description: description || null,
+        startDate,
+        endDate,
+        description,
       })
-      .eq('id', id)
-
-    if (err) { setError(err.message); setSaving(false); return }
-
-    // Regenerate packing list with updated location/dates
-    await fetch(`/api/trips/${id}/generate-packing`, { method: 'POST' })
-
-    router.push(`/trips/${id}`)
+      if (result.error) { setError(result.error); return }
+      router.push(`/trips/${id}`)
+    })
   }
 
-  async function handleDelete() {
+  function handleDelete() {
     if (!confirm('Delete this trip? This cannot be undone.')) return
-    await supabase.from('trips').delete().eq('id', id)
-    router.push('/dashboard')
+    startTransition(async () => {
+      const result = await deleteTrip(id)
+      if (result.error) { setError(result.error); return }
+      router.push('/dashboard')
+    })
   }
 
   if (loading) {
@@ -161,11 +159,11 @@ export default function EditTripPage() {
               onBlur={e => e.target.style.boxShadow = ''} />
           </div>
 
-          <button type="submit" disabled={saving}
+          <button type="submit" disabled={isPending}
             className="w-full flex items-center justify-center gap-2 text-white py-3 rounded-xl font-medium transition-opacity disabled:opacity-60 hover:opacity-90"
             style={{ background: 'var(--forest)' }}>
-            {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-            {saving ? 'Saving…' : 'Save changes'}
+            {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
+            {isPending ? 'Saving…' : 'Save changes'}
           </button>
         </form>
 

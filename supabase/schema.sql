@@ -111,8 +111,35 @@ alter table public.push_subscriptions enable row level security;
 
 -- Users: anyone authenticated can read; only own row write
 create policy "Users can read all profiles" on public.users for select using (auth.uid() is not null);
-create policy "Users can update own profile" on public.users for update using (auth.uid() = id);
 create policy "Users can insert own profile" on public.users for insert with check (auth.uid() = id);
+-- Profile UPDATE is funnelled through update_my_profile() so users can't
+-- rewrite the mirrored `email` field or change the primary key. The policy
+-- itself is removed; only the security-definer function below can write.
+drop policy if exists "Users can update own profile" on public.users;
+
+create or replace function public.update_my_profile(new_name text, new_avatar_url text default null)
+returns void
+language plpgsql security definer set search_path = public as $$
+declare
+  uid uuid := auth.uid();
+begin
+  if uid is null then
+    raise exception 'not authenticated';
+  end if;
+  if new_name is null or length(trim(new_name)) = 0 then
+    raise exception 'name is required';
+  end if;
+  if length(new_name) > 80 then
+    raise exception 'name too long';
+  end if;
+  update public.users
+    set name = trim(new_name),
+        avatar_url = coalesce(new_avatar_url, avatar_url)
+    where id = uid;
+end;
+$$;
+revoke all on function public.update_my_profile(text, text) from public;
+grant execute on function public.update_my_profile(text, text) to authenticated;
 
 -- Trips: members can see their trips
 create policy "Trip members can view trips" on public.trips for select
@@ -204,9 +231,49 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
 
--- Allow unauthenticated trip lookup by invite code (for join flow)
-create policy "Anyone can look up trip by invite code" on public.trips for select
-  using (true);
+-- Mirror auth.users.email changes into public.users.email so member lists
+-- stay in sync when a user updates their email in Supabase Auth.
+create or replace function public.handle_user_email_change()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if new.email is distinct from old.email then
+    update public.users set email = new.email where id = new.id;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists on_auth_user_email_changed on auth.users;
+create trigger on_auth_user_email_changed
+  after update of email on auth.users
+  for each row execute procedure public.handle_user_email_change();
+
+-- Invite-link preview: a security-definer function so unauthenticated
+-- visitors can see a narrow projection of a trip by its invite code,
+-- without a permissive SELECT policy on `trips` that would leak every row.
+create or replace function public.get_trip_by_invite(code text)
+returns table (
+  id uuid,
+  name text,
+  location_name text,
+  start_date date,
+  end_date date,
+  member_count bigint
+)
+language sql security definer set search_path = public as $$
+  select t.id, t.name, t.location_name, t.start_date, t.end_date,
+    (select count(*) from public.trip_members tm where tm.trip_id = t.id)
+  from public.trips t
+  where t.invite_code = code
+  limit 1;
+$$;
+
+revoke all on function public.get_trip_by_invite(text) from public;
+grant execute on function public.get_trip_by_invite(text) to anon, authenticated;
+
+-- Drop the previous permissive policy if it exists (it allowed SELECT on
+-- every trip row to every caller, intended only as an invite-code lookup).
+drop policy if exists "Anyone can look up trip by invite code" on public.trips;
 
 -- Realtime: enable for chat and claims
 alter publication supabase_realtime add table public.messages;

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { PackingItem, ItemType, ScaledMultiplier } from '@/types/database'
 import { CATEGORIES, scaleQuantity } from '@/lib/packing'
@@ -494,14 +494,77 @@ export default function PackingListClient({
   const [newItemMultiplier, setNewItemMultiplier] = useState<ScaledMultiplier>('per_person')
 
   const memberCount = Math.max(1, members.length)
+  const supabaseRef = useRef(supabase)
 
   function handleClaimsChange(itemId: string, newClaims: Claim[]) {
-    setClaims(prev => [...prev.filter(c => c.item_id !== itemId), ...newClaims])
+    setClaims(prev => {
+      const byId = new Map(prev.map(c => [c.id, c]))
+      for (const c of newClaims) byId.set(c.id, c)
+      // Drop any stale claims for this item that weren't included in newClaims.
+      const incomingIds = new Set(newClaims.map(c => c.id))
+      return Array.from(byId.values()).filter(c => c.item_id !== itemId || incomingIds.has(c.id))
+    })
   }
 
   function handleItemUpdate(updated: PackingItem) {
     setItems(prev => prev.map(i => i.id === updated.id ? updated : i))
   }
+
+  // Realtime: keep claims in sync when other members claim/unclaim items.
+  useEffect(() => {
+    const sb = supabaseRef.current
+    const channel = sb
+      .channel(`packing-claims:${tripId}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'item_claims', filter: `trip_id=eq.${tripId}` },
+        async (payload) => {
+          const newRow = payload.new as { id: string }
+          const { data } = await sb
+            .from('item_claims')
+            .select('*, users(id, name, avatar_url)')
+            .eq('id', newRow.id)
+            .maybeSingle()
+          if (data) setClaims(prev => prev.some(c => c.id === data.id) ? prev : [...prev, data as Claim])
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'item_claims', filter: `trip_id=eq.${tripId}` },
+        async (payload) => {
+          const updated = payload.new as { id: string }
+          const { data } = await sb
+            .from('item_claims')
+            .select('*, users(id, name, avatar_url)')
+            .eq('id', updated.id)
+            .maybeSingle()
+          if (data) setClaims(prev => prev.map(c => c.id === data.id ? data as Claim : c))
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'item_claims', filter: `trip_id=eq.${tripId}` },
+        (payload) => {
+          const deleted = payload.old as { id: string }
+          setClaims(prev => prev.filter(c => c.id !== deleted.id))
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'packing_items', filter: `trip_id=eq.${tripId}` },
+        async () => {
+          const { data } = await sb
+            .from('packing_items')
+            .select('*')
+            .eq('trip_id', tripId)
+            .order('category')
+            .order('name')
+          if (data) setItems(data)
+        }
+      )
+      .subscribe()
+    return () => { sb.removeChannel(channel) }
+  }, [tripId])
 
   const claimsByItem = useMemo(() => {
     const map: Record<string, Claim[]> = {}
@@ -571,8 +634,17 @@ export default function PackingListClient({
 
   async function regenerate() {
     setRegenerating(true)
-    await fetch(`/api/trips/${tripId}/generate-packing`, { method: 'POST' })
-    window.location.reload()
+    try {
+      await fetch(`/api/trips/${tripId}/generate-packing`, { method: 'POST' })
+      const [{ data: freshItems }, { data: freshClaims }] = await Promise.all([
+        supabase.from('packing_items').select('*').eq('trip_id', tripId).order('category').order('name'),
+        supabase.from('item_claims').select('*, users(id, name, avatar_url)').eq('trip_id', tripId),
+      ])
+      if (freshItems) setItems(freshItems)
+      if (freshClaims) setClaims(freshClaims as Claim[])
+    } finally {
+      setRegenerating(false)
+    }
   }
 
   async function addCustomItem() {

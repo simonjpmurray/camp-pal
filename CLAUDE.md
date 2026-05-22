@@ -23,7 +23,7 @@ Path alias `@/*` resolves to the repo root (e.g. `@/lib/supabase/server`).
 
 ### Middleware lives in `proxy.ts`, not `middleware.ts`
 
-Next 16 still respects the conventional name but this project uses `proxy.ts` at the repo root. It guards `/dashboard`, `/trips`, `/profile` (redirects to `/login`) and refreshes Supabase auth cookies on every request via `@supabase/ssr`. Edit this file when changing auth-gated routes or cookie behaviour.
+Next 16 renamed the convention from `middleware.ts` to `proxy.ts`. `middleware.ts` still works but emits a deprecation warning at build time. The file at the repo root guards `/dashboard`, `/trips`, `/profile` (redirects to `/login`) and refreshes Supabase auth cookies on every request via `@supabase/ssr`. Edit this file when changing auth-gated routes or cookie behaviour.
 
 ### Two Supabase clients, three keys
 

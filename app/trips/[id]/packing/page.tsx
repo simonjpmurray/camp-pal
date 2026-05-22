@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect, notFound } from 'next/navigation'
 import AppNav from '@/components/ui/AppNav'
 import PackingListClient from '@/components/packing/PackingListClient'
+import { tripNightCount } from '@/lib/trip-packing'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 
@@ -19,12 +20,7 @@ export default async function PackingPage({ params }: { params: Promise<{ id: st
 
   if (!trip) notFound()
 
-  const nightCount = Math.max(
-    1,
-    Math.round(
-      (new Date(trip.end_date).getTime() - new Date(trip.start_date).getTime()) / (1000 * 60 * 60 * 24)
-    )
-  )
+  const nightCount = tripNightCount(trip.start_date, trip.end_date)
 
   const { data: membership } = await supabase
     .from('trip_members')
@@ -52,6 +48,10 @@ export default async function PackingPage({ params }: { params: Promise<{ id: st
     .select('users(id, name, avatar_url)')
     .eq('trip_id', id)
 
+  const memberProfiles = (members ?? [])
+    .map(m => m.users)
+    .filter((u): u is NonNullable<typeof u> => u != null)
+
   return (
     <div className="flex min-h-screen" style={{ background: 'var(--background)' }}>
       <AppNav />
@@ -71,8 +71,8 @@ export default async function PackingPage({ params }: { params: Promise<{ id: st
           currentUserId={user.id}
           isCreator={trip.creator_id === user.id}
           initialItems={items ?? []}
-          initialClaims={(claims ?? []) as Array<{ id: string; item_id: string; trip_id: string; user_id: string; quantity_claimed: number; confirmed: boolean; created_at: string; users: { id: string; name: string; avatar_url: string | null } | null }>}
-          members={(members ?? []).map(m => m.users).filter(Boolean) as unknown as Array<{ id: string; name: string; avatar_url: string | null }>}
+          initialClaims={claims ?? []}
+          members={memberProfiles}
           nightCount={nightCount}
         />
       </main>

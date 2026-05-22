@@ -1,13 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import AppNav from '@/components/ui/AppNav'
 import LocationPicker from '@/components/map/LocationPicker'
 import { ArrowLeft, Loader2 } from 'lucide-react'
 import Link from 'next/link'
-import { nanoid } from 'nanoid'
+import { createTrip } from './actions'
 
 interface Location {
   name: string
@@ -17,67 +16,38 @@ interface Location {
 
 export default function NewTripPage() {
   const router = useRouter()
-  const supabase = createClient()
 
   const [name, setName] = useState('')
   const [location, setLocation] = useState<Location | null>(null)
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
   const [description, setDescription] = useState('')
-  const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [isPending, startTransition] = useTransition()
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!location) { setError('Please select a location'); return }
     if (!startDate || !endDate) { setError('Please set trip dates'); return }
     if (new Date(endDate) < new Date(startDate)) { setError('End date must be after start date'); return }
 
-    setLoading(true)
     setError('')
-
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { router.push('/login'); return }
-
-    const inviteCode = nanoid(8)
-
-    const { data: trip, error: tripErr } = await supabase
-      .from('trips')
-      .insert({
+    startTransition(async () => {
+      const result = await createTrip({
         name,
-        location_name: location.name,
+        locationName: location.name,
         lat: location.lat,
         lng: location.lng,
-        start_date: startDate,
-        end_date: endDate,
-        description: description || null,
-        invite_code: inviteCode,
-        creator_id: user.id,
+        startDate,
+        endDate,
+        description,
       })
-      .select()
-      .single()
-
-    if (tripErr || !trip) {
-      setError(tripErr?.message ?? 'Failed to create trip')
-      setLoading(false)
-      return
-    }
-
-    // Add creator as member
-    await supabase.from('trip_members').insert({
-      trip_id: trip.id,
-      user_id: user.id,
-      role: 'creator',
+      if (result.error && !result.tripId) {
+        setError(result.error)
+        return
+      }
+      if (result.tripId) router.push(`/trips/${result.tripId}`)
     })
-
-    // Trigger packing list generation (server-side)
-    try {
-      await fetch(`/api/trips/${trip.id}/generate-packing`, { method: 'POST' })
-    } catch {
-      // Non-fatal — packing list can be generated later
-    }
-
-    router.push(`/trips/${trip.id}`)
   }
 
   return (
@@ -106,10 +76,9 @@ export default function NewTripPage() {
               value={name}
               onChange={e => setName(e.target.value)}
               required
+              maxLength={80}
               placeholder="e.g. Lake District Long Weekend"
-              className="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm outline-none transition-shadow"
-              onFocus={e => e.target.style.boxShadow = '0 0 0 2px #c0532a40'}
-              onBlur={e => e.target.style.boxShadow = ''}
+              className="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm outline-none transition-shadow focus:shadow-[0_0_0_2px_#c0532a40]"
             />
           </div>
 
@@ -130,9 +99,7 @@ export default function NewTripPage() {
                   value={startDate}
                   onChange={e => setStartDate(e.target.value)}
                   required
-                  className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm outline-none transition-shadow"
-                  onFocus={e => e.target.style.boxShadow = '0 0 0 2px #c0532a40'}
-                  onBlur={e => e.target.style.boxShadow = ''}
+                  className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm outline-none transition-shadow focus:shadow-[0_0_0_2px_#c0532a40]"
                 />
               </div>
               <div>
@@ -143,9 +110,7 @@ export default function NewTripPage() {
                   min={startDate}
                   onChange={e => setEndDate(e.target.value)}
                   required
-                  className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm outline-none transition-shadow"
-                  onFocus={e => e.target.style.boxShadow = '0 0 0 2px #c0532a40'}
-                  onBlur={e => e.target.style.boxShadow = ''}
+                  className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm outline-none transition-shadow focus:shadow-[0_0_0_2px_#c0532a40]"
                 />
               </div>
             </div>
@@ -159,20 +124,19 @@ export default function NewTripPage() {
               onChange={e => setDescription(e.target.value)}
               placeholder="Campsite details, booking links, what to expect..."
               rows={3}
-              className="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm outline-none transition-shadow resize-none"
-              onFocus={e => e.target.style.boxShadow = '0 0 0 2px #c0532a40'}
-              onBlur={e => e.target.style.boxShadow = ''}
+              maxLength={2000}
+              className="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm outline-none transition-shadow resize-none focus:shadow-[0_0_0_2px_#c0532a40]"
             />
           </div>
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={isPending}
             className="w-full flex items-center justify-center gap-2 text-white py-3 rounded-xl font-medium transition-opacity disabled:opacity-60 hover:opacity-90"
             style={{ background: 'var(--forest)' }}
           >
-            {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-            {loading ? 'Creating trip…' : 'Create trip & generate packing list'}
+            {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
+            {isPending ? 'Creating trip…' : 'Create trip & generate packing list'}
           </button>
         </form>
       </main>

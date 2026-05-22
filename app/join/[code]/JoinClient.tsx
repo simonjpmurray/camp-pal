@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Flame, MapPin, Calendar, Users, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
-import { format } from 'date-fns'
+import { format, parseISO } from 'date-fns'
 
 interface TripInfo {
   id: string
@@ -96,7 +96,7 @@ export default function JoinClient({ trip, code, isLoggedIn }: Props) {
           </div>
           <div className="flex items-center gap-2 text-sm text-stone-600">
             <Calendar className="w-4 h-4 shrink-0" style={{ color: 'var(--forest)' }} />
-            {format(new Date(trip.start_date), 'EEE d MMM')} – {format(new Date(trip.end_date), 'EEE d MMM yyyy')}
+            {format(parseISO(trip.start_date), 'EEE d MMM')} – {format(parseISO(trip.end_date), 'EEE d MMM yyyy')}
           </div>
           <div className="flex items-center gap-2 text-sm text-stone-600">
             <Users className="w-4 h-4 shrink-0" style={{ color: 'var(--forest)' }} />

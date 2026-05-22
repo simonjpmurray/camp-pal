@@ -1,18 +1,16 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Sun, Moon } from 'lucide-react'
 
 export default function DarkModeToggle() {
-  const [dark, setDark] = useState(false)
-
-  useEffect(() => {
-    const stored = localStorage.getItem('theme')
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-    const isDark = stored === 'dark' || (!stored && prefersDark)
-    setDark(isDark)
-    document.documentElement.classList.toggle('dark', isDark)
-  }, [])
+  // The dark class is set by the bootstrap script in layout.tsx before paint.
+  // Read it directly to avoid a useEffect/setState pair that triggers the
+  // react-hooks/set-state-in-effect lint rule.
+  const [dark, setDark] = useState(() => {
+    if (typeof document === 'undefined') return false
+    return document.documentElement.classList.contains('dark')
+  })
 
   function toggle() {
     const next = !dark

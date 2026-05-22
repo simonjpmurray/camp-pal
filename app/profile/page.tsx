@@ -38,10 +38,7 @@ export default function ProfilePage() {
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
     setSaving(true)
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-
-    await supabase.from('users').update({ name }).eq('id', user.id)
+    await supabase.rpc('update_my_profile', { new_name: name })
     setSaving(false)
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
