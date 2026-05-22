@@ -110,7 +110,9 @@ alter table public.weather_cache enable row level security;
 alter table public.push_subscriptions enable row level security;
 
 -- Users: anyone authenticated can read; only own row write
+drop policy if exists "Users can read all profiles" on public.users;
 create policy "Users can read all profiles" on public.users for select using (auth.uid() is not null);
+drop policy if exists "Users can insert own profile" on public.users;
 create policy "Users can insert own profile" on public.users for insert with check (auth.uid() = id);
 -- Profile UPDATE is funnelled through update_my_profile() so users can't
 -- rewrite the mirrored `email` field or change the primary key. The policy
@@ -142,20 +144,27 @@ revoke all on function public.update_my_profile(text, text) from public;
 grant execute on function public.update_my_profile(text, text) to authenticated;
 
 -- Trips: members can see their trips
+drop policy if exists "Trip members can view trips" on public.trips;
 create policy "Trip members can view trips" on public.trips for select
   using (exists (select 1 from public.trip_members tm where tm.trip_id = id and tm.user_id = auth.uid()));
+drop policy if exists "Authenticated users can create trips" on public.trips;
 create policy "Authenticated users can create trips" on public.trips for insert
   with check (auth.uid() = creator_id);
+drop policy if exists "Creators can update their trips" on public.trips;
 create policy "Creators can update their trips" on public.trips for update
   using (auth.uid() = creator_id);
+drop policy if exists "Creators can delete their trips" on public.trips;
 create policy "Creators can delete their trips" on public.trips for delete
   using (auth.uid() = creator_id);
 
 -- Trip members
+drop policy if exists "Members can view trip membership" on public.trip_members;
 create policy "Members can view trip membership" on public.trip_members for select
   using (exists (select 1 from public.trip_members tm2 where tm2.trip_id = trip_id and tm2.user_id = auth.uid()));
+drop policy if exists "Users can join trips" on public.trip_members;
 create policy "Users can join trips" on public.trip_members for insert
   with check (auth.uid() = user_id);
+drop policy if exists "Creators can remove members" on public.trip_members;
 create policy "Creators can remove members" on public.trip_members for delete
   using (
     user_id = auth.uid() or
@@ -163,44 +172,59 @@ create policy "Creators can remove members" on public.trip_members for delete
   );
 
 -- Packing items: trip members can CRUD
+drop policy if exists "Trip members can view packing items" on public.packing_items;
 create policy "Trip members can view packing items" on public.packing_items for select
   using (exists (select 1 from public.trip_members tm where tm.trip_id = trip_id and tm.user_id = auth.uid()));
+drop policy if exists "Trip members can add packing items" on public.packing_items;
 create policy "Trip members can add packing items" on public.packing_items for insert
   with check (exists (select 1 from public.trip_members tm where tm.trip_id = trip_id and tm.user_id = auth.uid()));
+drop policy if exists "Trip members can update packing items" on public.packing_items;
 create policy "Trip members can update packing items" on public.packing_items for update
   using (exists (select 1 from public.trip_members tm where tm.trip_id = trip_id and tm.user_id = auth.uid()));
+drop policy if exists "Creators can delete packing items" on public.packing_items;
 create policy "Creators can delete packing items" on public.packing_items for delete
   using (exists (select 1 from public.trips t where t.id = trip_id and t.creator_id = auth.uid()));
 
 -- Item claims
+drop policy if exists "Trip members can view claims" on public.item_claims;
 create policy "Trip members can view claims" on public.item_claims for select
   using (exists (select 1 from public.trip_members tm where tm.trip_id = trip_id and tm.user_id = auth.uid()));
+drop policy if exists "Users can manage own claims" on public.item_claims;
 create policy "Users can manage own claims" on public.item_claims for insert
   with check (auth.uid() = user_id);
+drop policy if exists "Users can update own claims" on public.item_claims;
 create policy "Users can update own claims" on public.item_claims for update
   using (auth.uid() = user_id);
+drop policy if exists "Users can delete own claims" on public.item_claims;
 create policy "Users can delete own claims" on public.item_claims for delete
   using (auth.uid() = user_id);
 
 -- Messages
+drop policy if exists "Trip members can view messages" on public.messages;
 create policy "Trip members can view messages" on public.messages for select
   using (exists (select 1 from public.trip_members tm where tm.trip_id = trip_id and tm.user_id = auth.uid()));
+drop policy if exists "Trip members can send messages" on public.messages;
 create policy "Trip members can send messages" on public.messages for insert
   with check (auth.uid() = user_id and exists (select 1 from public.trip_members tm where tm.trip_id = trip_id and tm.user_id = auth.uid()));
+drop policy if exists "Creators can pin messages" on public.messages;
 create policy "Creators can pin messages" on public.messages for update
   using (exists (select 1 from public.trips t where t.id = trip_id and t.creator_id = auth.uid()));
 
 -- Notifications
+drop policy if exists "Users can view own notifications" on public.notifications;
 create policy "Users can view own notifications" on public.notifications for select
   using (auth.uid() = user_id);
+drop policy if exists "Users can update own notifications" on public.notifications;
 create policy "Users can update own notifications" on public.notifications for update
   using (auth.uid() = user_id);
 
 -- Weather cache
+drop policy if exists "Trip members can view weather" on public.weather_cache;
 create policy "Trip members can view weather" on public.weather_cache for select
   using (exists (select 1 from public.trip_members tm where tm.trip_id = trip_id and tm.user_id = auth.uid()));
 
 -- Push subscriptions
+drop policy if exists "Users manage own subscriptions" on public.push_subscriptions;
 create policy "Users manage own subscriptions" on public.push_subscriptions for all
   using (auth.uid() = user_id);
 
@@ -275,10 +299,19 @@ grant execute on function public.get_trip_by_invite(text) to anon, authenticated
 -- every trip row to every caller, intended only as an invite-code lookup).
 drop policy if exists "Anyone can look up trip by invite code" on public.trips;
 
--- Realtime: enable for chat and claims
-alter publication supabase_realtime add table public.messages;
-alter publication supabase_realtime add table public.item_claims;
-alter publication supabase_realtime add table public.trip_members;
+-- Realtime: enable for chat and claims (idempotent — skip if already added)
+do $$
+begin
+  if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'messages') then
+    alter publication supabase_realtime add table public.messages;
+  end if;
+  if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'item_claims') then
+    alter publication supabase_realtime add table public.item_claims;
+  end if;
+  if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'trip_members') then
+    alter publication supabase_realtime add table public.trip_members;
+  end if;
+end $$;
 
 -- =================== MIGRATION: Item categories ===================
 -- Adds item_type and scaled_multiplier to packing_items.
