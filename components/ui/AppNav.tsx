@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import DarkModeToggle from './DarkModeToggle'
 import PushSetup from './PushSetup'
 import SidebarWeatherCompact from './SidebarWeatherCompact'
+import NotificationBell from './NotificationBell'
 
 const TRIP_PATH_RE = /^\/trips\/([0-9a-f-]{36})(?:\/|$)/i
 
@@ -101,7 +102,10 @@ export default function AppNav() {
 
         <div className="flex items-center justify-between px-3 mt-4 mb-2">
           <span className="text-xs" style={{ color: 'var(--muted)' }}>Theme</span>
-          <DarkModeToggle />
+          <div className="flex items-center gap-1">
+            <NotificationBell />
+            <DarkModeToggle />
+          </div>
         </div>
 
         <button
@@ -138,6 +142,7 @@ export default function AppNav() {
           <Plus className="w-5 h-5" />
           New
         </Link>
+        <NotificationBell />
         <DarkModeToggle />
       </nav>
     </>

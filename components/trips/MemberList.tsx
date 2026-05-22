@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import { Crown, X } from 'lucide-react'
 
@@ -23,9 +24,18 @@ interface Props {
 }
 
 function Avatar({ user, size = 'md' }: { user: { name: string; avatar_url: string | null }; size?: 'sm' | 'md' }) {
+  const px = size === 'sm' ? 28 : 36
   const sz = size === 'sm' ? 'w-7 h-7 text-xs' : 'w-9 h-9 text-sm'
   if (user.avatar_url) {
-    return <img src={user.avatar_url} alt={user.name} className={`${sz} rounded-full object-cover`} />
+    return (
+      <Image
+        src={user.avatar_url}
+        alt={user.name}
+        width={px}
+        height={px}
+        className={`${sz} rounded-full object-cover`}
+      />
+    )
   }
   return (
     <div className={`${sz} rounded-full flex items-center justify-center font-semibold text-white`}

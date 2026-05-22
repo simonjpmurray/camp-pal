@@ -6,8 +6,9 @@ import TripMap from '@/components/map/TripMap'
 import WeatherWidget from '@/components/trips/WeatherWidget'
 import InviteButton from '@/components/trips/InviteButton'
 import MemberList from '@/components/trips/MemberList'
-import { format, differenceInDays, isFuture } from 'date-fns'
+import { format, differenceInCalendarDays, parseISO, isFuture } from 'date-fns'
 import { MapPin, Calendar, ArrowLeft, Pencil, Package, MessageCircle, ExternalLink } from 'lucide-react'
+import { getAppUrl } from '@/lib/get-app-url'
 
 export default async function TripDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -55,11 +56,11 @@ export default async function TripDetailPage({ params }: { params: Promise<{ id:
   const coveredItems = packingItems?.filter(i => claimedItemIds.has(i.id)).length ?? 0
   const redItems = packingItems?.filter(i => i.weather_highlight === 'red').length ?? 0
 
-  const startDate = new Date(trip.start_date)
-  const endDate = new Date(trip.end_date)
-  const daysUntil = differenceInDays(startDate, new Date())
+  const startDate = parseISO(trip.start_date)
+  const endDate = parseISO(trip.end_date)
+  const daysUntil = differenceInCalendarDays(startDate, new Date())
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
+  const appUrl = await getAppUrl()
   const inviteUrl = `${appUrl}/join/${trip.invite_code}`
 
   return (
@@ -183,7 +184,7 @@ export default async function TripDetailPage({ params }: { params: Promise<{ id:
             Members ({members?.length ?? 0})
           </h2>
           <MemberList
-            members={members as unknown as Array<{ role: string; joined_at: string; users: { id: string; name: string; avatar_url: string | null; email: string } }> ?? []}
+            members={(members ?? []).filter(m => m.users != null) as Array<{ role: string; joined_at: string; users: { id: string; name: string; avatar_url: string | null; email: string } }>}
             currentUserId={user.id}
             tripId={id}
             isCreator={isCreator}

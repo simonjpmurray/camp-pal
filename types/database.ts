@@ -8,7 +8,23 @@ export type ScaledMultiplier = 'per_person' | 'per_night' | 'per_person_per_nigh
 export interface Database {
   public: {
     Views: Record<string, never>
-    Functions: Record<string, never>
+    Functions: {
+      get_trip_by_invite: {
+        Args: { code: string }
+        Returns: Array<{
+          id: string
+          name: string
+          location_name: string
+          start_date: string
+          end_date: string
+          member_count: number
+        }>
+      }
+      update_my_profile: {
+        Args: { new_name: string; new_avatar_url?: string | null }
+        Returns: void
+      }
+    }
     Enums: Record<string, never>
     CompositeTypes: Record<string, never>
     Tables: {
@@ -33,6 +49,7 @@ export interface Database {
           name?: string
           avatar_url?: string | null
         }
+        Relationships: []
       }
       trips: {
         Row: {
@@ -70,6 +87,7 @@ export interface Database {
           end_date?: string
           description?: string | null
         }
+        Relationships: []
       }
       trip_members: {
         Row: {
@@ -89,6 +107,22 @@ export interface Database {
         Update: {
           role?: MemberRole
         }
+        Relationships: [
+          {
+            foreignKeyName: 'trip_members_trip_id_fkey'
+            columns: ['trip_id']
+            isOneToOne: false
+            referencedRelation: 'trips'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'trip_members_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'users'
+            referencedColumns: ['id']
+          }
+        ]
       }
       packing_items: {
         Row: {
@@ -126,6 +160,7 @@ export interface Database {
           item_type?: ItemType
           scaled_multiplier?: ScaledMultiplier | null
         }
+        Relationships: []
       }
       item_claims: {
         Row: {
@@ -150,6 +185,22 @@ export interface Database {
           quantity_claimed?: number
           confirmed?: boolean
         }
+        Relationships: [
+          {
+            foreignKeyName: 'item_claims_item_id_fkey'
+            columns: ['item_id']
+            isOneToOne: false
+            referencedRelation: 'packing_items'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'item_claims_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'users'
+            referencedColumns: ['id']
+          }
+        ]
       }
       messages: {
         Row: {
@@ -172,6 +223,15 @@ export interface Database {
           content?: string
           pinned?: boolean
         }
+        Relationships: [
+          {
+            foreignKeyName: 'messages_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'users'
+            referencedColumns: ['id']
+          }
+        ]
       }
       notifications: {
         Row: {
@@ -195,6 +255,7 @@ export interface Database {
         Update: {
           read?: boolean
         }
+        Relationships: []
       }
       weather_cache: {
         Row: {
@@ -213,6 +274,7 @@ export interface Database {
           fetched_at?: string
           forecast_json?: Json
         }
+        Relationships: []
       }
       push_subscriptions: {
         Row: {
@@ -230,6 +292,43 @@ export interface Database {
         Update: {
           subscription?: Json
         }
+        Relationships: []
+      }
+      message_reactions: {
+        Row: {
+          id: string
+          message_id: string
+          user_id: string
+          emoji: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          message_id: string
+          user_id: string
+          emoji: string
+          created_at?: string
+        }
+        Update: {
+          emoji?: string
+        }
+        Relationships: []
+      }
+      chat_reads: {
+        Row: {
+          user_id: string
+          trip_id: string
+          last_read_at: string
+        }
+        Insert: {
+          user_id: string
+          trip_id: string
+          last_read_at?: string
+        }
+        Update: {
+          last_read_at?: string
+        }
+        Relationships: []
       }
     }
   }
@@ -243,3 +342,6 @@ export type ItemClaim = Database['public']['Tables']['item_claims']['Row']
 export type Message = Database['public']['Tables']['messages']['Row']
 export type UserProfile = Database['public']['Tables']['users']['Row']
 export type WeatherCache = Database['public']['Tables']['weather_cache']['Row']
+export type Notification = Database['public']['Tables']['notifications']['Row']
+export type MessageReaction = Database['public']['Tables']['message_reactions']['Row']
+export type ChatRead = Database['public']['Tables']['chat_reads']['Row']

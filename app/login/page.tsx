@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { safeRedirect } from '@/lib/safe-redirect'
 import { Flame, Mail, Lock, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 
@@ -10,9 +11,14 @@ function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const isSignup = searchParams.get('signup') === 'true'
-  const redirectTo = searchParams.get('redirectTo') || '/dashboard'
+  const redirectTo = safeRedirect(searchParams.get('redirectTo'))
 
   const [mode, setMode] = useState<'login' | 'signup'>(isSignup ? 'signup' : 'login')
+  const [lastSignup, setLastSignup] = useState(isSignup)
+  if (lastSignup !== isSignup) {
+    setLastSignup(isSignup)
+    setMode(isSignup ? 'signup' : 'login')
+  }
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')
@@ -21,10 +27,6 @@ function LoginForm() {
   const [message, setMessage] = useState('')
 
   const supabase = createClient()
-
-  useEffect(() => {
-    setMode(isSignup ? 'signup' : 'login')
-  }, [isSignup])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()

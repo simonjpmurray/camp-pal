@@ -1,4 +1,4 @@
-const CACHE_NAME = 'camp-pal-v1'
+const CACHE_NAME = 'campfire-v2'
 const OFFLINE_URLS = [
   '/',
   '/dashboard',
@@ -69,21 +69,21 @@ self.addEventListener('push', (event) => {
   try {
     data = event.data.json()
   } catch {
-    data = { title: 'Camp Pal', body: event.data.text() }
+    data = { title: 'CampFire', body: event.data.text() }
   }
 
   const options = {
     body: data.body || '',
     icon: '/icons/icon-192.png',
     badge: '/icons/icon-192.png',
-    tag: data.tag || 'camp-pal',
+    tag: data.tag || 'campfire',
     data: { url: data.url || '/dashboard' },
     actions: data.actions || [],
     vibrate: [100, 50, 100],
   }
 
   event.waitUntil(
-    self.registration.showNotification(data.title || 'Camp Pal', options)
+    self.registration.showNotification(data.title || 'CampFire', options)
   )
 })
 

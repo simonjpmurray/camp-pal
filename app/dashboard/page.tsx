@@ -2,18 +2,19 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import AppNav from '@/components/ui/AppNav'
-import { format, differenceInDays, isFuture, isPast } from 'date-fns'
+import { format, differenceInCalendarDays, parseISO } from 'date-fns'
 import { MapPin, Calendar, Users, Plus, Flame } from 'lucide-react'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
+  const userId = user.id
 
   const { data: memberships } = await supabase
     .from('trip_members')
     .select('trip_id, role')
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
 
   const tripIds = memberships?.map(m => m.trip_id) ?? []
 
@@ -37,14 +38,15 @@ export default async function DashboardPage() {
   }
 
   const now = new Date()
-  const upcoming = trips.filter(t => isFuture(new Date(t.start_date)))
-  const past = trips.filter(t => isPast(new Date(t.end_date)))
-  const active = trips.filter(t => !isFuture(new Date(t.start_date)) && !isPast(new Date(t.end_date)))
+  const todayStr = format(now, 'yyyy-MM-dd')
+  const upcoming = trips.filter(t => t.start_date > todayStr)
+  const past = trips.filter(t => t.end_date < todayStr)
+  const active = trips.filter(t => t.start_date <= todayStr && t.end_date >= todayStr)
 
   function TripCard({ trip }: { trip: typeof trips[0] }) {
-    const start = new Date(trip.start_date)
-    const daysUntil = differenceInDays(start, now)
-    const isCreator = trip.creator_id === user!.id
+    const start = parseISO(trip.start_date)
+    const daysUntil = differenceInCalendarDays(start, now)
+    const isCreator = trip.creator_id === userId
     const memberCount = trip.trip_members?.length ?? 0
 
     return (
@@ -68,7 +70,7 @@ export default async function DashboardPage() {
           </div>
           <div className="flex items-center gap-1.5">
             <Calendar className="w-3.5 h-3.5 shrink-0" />
-            <span>{format(new Date(trip.start_date), 'MMM d')} – {format(new Date(trip.end_date), 'MMM d, yyyy')}</span>
+            <span>{format(parseISO(trip.start_date), 'MMM d')} – {format(parseISO(trip.end_date), 'MMM d, yyyy')}</span>
           </div>
           <div className="flex items-center gap-1.5">
             <Users className="w-3.5 h-3.5 shrink-0" />

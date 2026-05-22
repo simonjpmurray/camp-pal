@@ -1,27 +1,27 @@
-import { createClient, createAdminClient } from '@/lib/supabase/server'
-import { db } from '@/lib/supabase/query'
+import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import JoinClient from './JoinClient'
 
 export default async function JoinPage({ params }: { params: Promise<{ code: string }> }) {
   const { code } = await params
 
-  // Use admin client to look up trip by invite code — bypasses RLS so
-  // unauthenticated users can see the invite preview without a permissive policy
-  const adminSupabase = await createAdminClient()
-  const { data: trip } = await db(adminSupabase)
-    .from('trips')
-    .select('id, name, location_name, start_date, end_date, trip_members(user_id)')
-    .eq('invite_code', code)
-    .maybeSingle()
-
   const supabase = await createClient()
+
+  // Security-definer RPC returns a narrow projection so unauthenticated visitors
+  // can see the invite preview without granting blanket SELECT on `trips`.
+  const { data: tripRows } = await supabase.rpc('get_trip_by_invite', { code })
+  const trip = Array.isArray(tripRows) && tripRows[0] ? tripRows[0] : null
+
   const { data: { user } } = await supabase.auth.getUser()
 
-  // If already a member, redirect straight to trip
   if (user && trip) {
-    const isMember = (trip.trip_members as Array<{ user_id: string }>).some(m => m.user_id === user.id)
-    if (isMember) redirect(`/trips/${trip.id}`)
+    const { data: membership } = await supabase
+      .from('trip_members')
+      .select('id')
+      .eq('trip_id', trip.id)
+      .eq('user_id', user.id)
+      .maybeSingle()
+    if (membership) redirect(`/trips/${trip.id}`)
   }
 
   return (
@@ -32,7 +32,7 @@ export default async function JoinPage({ params }: { params: Promise<{ code: str
         location_name: trip.location_name,
         start_date: trip.start_date,
         end_date: trip.end_date,
-        memberCount: (trip.trip_members as Array<unknown>).length,
+        memberCount: Number(trip.member_count ?? 0),
       } : null}
       code={code}
       isLoggedIn={!!user}

@@ -72,12 +72,21 @@ export default function ChatClient({ tripId, currentUserId, currentUser, isCreat
     const content = input.trim()
     setInput('')
 
-    await supabase.from('messages').insert({
+    const { data: inserted } = await supabase.from('messages').insert({
       trip_id: tripId,
       user_id: currentUserId,
       content,
       pinned: false,
-    })
+    }).select('id').single()
+
+    if (inserted) {
+      // Fire-and-forget — push delivery shouldn't block the UI.
+      fetch('/api/push/notify-message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tripId, messageId: inserted.id }),
+      }).catch(() => { /* non-fatal */ })
+    }
 
     setSending(false)
     inputRef.current?.focus()
