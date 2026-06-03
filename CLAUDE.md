@@ -21,9 +21,19 @@ Path alias `@/*` resolves to the repo root (e.g. `@/lib/supabase/server`).
 
 ## Architecture
 
+### Anonymous-first auth
+
+The app is **friction-free by default**: there is no login wall. `components/auth/AnonymousAuth.tsx` (mounted in `app/layout.tsx`) calls `supabase.auth.signInAnonymously()` on first load for any visitor without a session, then `router.refresh()` so server components re-render with the new session. Every visitor gets a real `auth.uid()` with an `is_anonymous: true` JWT claim, so all RLS policies keyed on `auth.uid()` keep working unchanged.
+
+Consequences to keep in mind:
+- **`public.users.email` is nullable.** Anonymous users have no email. `handle_new_user()` mirrors a null email and an empty name; `DisplayNamePrompt.tsx` (also in the layout) then asks anonymous users what to call them and writes via the `update_my_profile` RPC. Don't reintroduce a NOT NULL on `email` — it would make `signInAnonymously()` fail at the trigger.
+- **`/login` is repurposed as "Save your access".** It detects three states client-side: anonymous → upgrade form (`updateUser({email,password})` or `linkIdentity({provider:'google'})`, same UUID, no data loss); non-anonymous → "you're all set"; signed-out → the original email/Google login form.
+- **Sign-out is hidden for anonymous users** in `AppNav` (it would orphan their trips) — replaced with a "Save your access" link.
+- Requires the **Anonymous Sign-ins** provider toggled on in the Supabase dashboard (Authentication → Providers). Without it, `signInAnonymously()` errors — `AnonymousAuth` logs this to the console.
+
 ### Middleware lives in `proxy.ts`, not `middleware.ts`
 
-Next 16 renamed the convention from `middleware.ts` to `proxy.ts`. `middleware.ts` still works but emits a deprecation warning at build time. The file at the repo root guards `/dashboard`, `/trips`, `/profile` (redirects to `/login`) and refreshes Supabase auth cookies on every request via `@supabase/ssr`. Edit this file when changing auth-gated routes or cookie behaviour.
+Next 16 renamed the convention from `middleware.ts` to `proxy.ts`. `middleware.ts` still works but emits a deprecation warning at build time. The file at the repo root refreshes Supabase auth cookies on every request via `@supabase/ssr`. It **no longer redirects unauthenticated users** (anonymous sign-in covers that); its only redirect now sends *non-anonymous* users away from `/login` to `/dashboard`. Edit this file when changing cookie behaviour or `/login` steering.
 
 ### Two Supabase clients, three keys
 

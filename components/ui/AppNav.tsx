@@ -1,8 +1,9 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { Flame, LayoutDashboard, User, LogOut, Plus, ExternalLink } from 'lucide-react'
+import { Flame, LayoutDashboard, User, LogOut, Plus, ExternalLink, Mail } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import DarkModeToggle from './DarkModeToggle'
 import PushSetup from './PushSetup'
@@ -22,6 +23,18 @@ export default function AppNav() {
   const supabase = createClient()
   const tripIdMatch = pathname.match(TRIP_PATH_RE)
   const activeTripId = tripIdMatch ? tripIdMatch[1] : null
+  const [isAnonymous, setIsAnonymous] = useState(false)
+
+  useEffect(() => {
+    function refresh() {
+      supabase.auth.getUser().then(({ data: { user } }) => {
+        setIsAnonymous(!!user?.is_anonymous)
+      })
+    }
+    refresh()
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => refresh())
+    return () => subscription.unsubscribe()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleSignOut() {
     await supabase.auth.signOut()
@@ -108,16 +121,31 @@ export default function AppNav() {
           </div>
         </div>
 
-        <button
-          onClick={handleSignOut}
-          className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors"
-          style={{ color: '#000' }}
-          onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-hover)')}
-          onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-        >
-          <LogOut className="w-5 h-5" />
-          Sign out
-        </button>
+        {/* Anonymous users have no other identity — signing out would orphan
+            their trips forever — so offer "Save your access" instead. */}
+        {isAnonymous ? (
+          <Link
+            href="/login"
+            className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors"
+            style={{ color: '#000' }}
+            onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-hover)')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+          >
+            <Mail className="w-5 h-5" />
+            Save your access
+          </Link>
+        ) : (
+          <button
+            onClick={handleSignOut}
+            className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors"
+            style={{ color: '#000' }}
+            onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-hover)')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+          >
+            <LogOut className="w-5 h-5" />
+            Sign out
+          </button>
+        )}
       </aside>
 
       {/* Mobile bottom nav */}
