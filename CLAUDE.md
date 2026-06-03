@@ -42,6 +42,8 @@ Next 16 renamed the convention from `middleware.ts` to `proxy.ts`. `middleware.t
 
 RLS policies are defined in `supabase/schema.sql` (single-file schema, no migrations dir). Treat that file as the source of truth for tables and access rules.
 
+**RLS gotcha — membership checks go through `is_trip_member()`.** A policy ON `trip_members` that queries `trip_members` directly throws `infinite recursion detected in policy for relation "trip_members"`. All membership tests (on `trips`, `trip_members`, `packing_items`, `item_claims`, `messages`, `weather_cache`) call the `SECURITY DEFINER` function `public.is_trip_member(trip_id, uid)` instead, whose read bypasses RLS and breaks the cycle. Don't write `exists (select 1 from trip_members …)` inside a policy — use the function. Note also the `trips` SELECT policy keeps an `auth.uid() = creator_id` clause so `createTrip` can read the row back via `INSERT … RETURNING` before the membership row exists. Schema changes only take effect once `schema.sql` (or the changed statements) is re-run against the live Supabase DB.
+
 ### Packing list is a templated engine, not free-form
 
 `lib/packing.ts` declares ~80 `PackingItemTemplate` records grouped by `category`. Each template has:

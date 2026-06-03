@@ -118,6 +118,22 @@ alter table public.notifications enable row level security;
 alter table public.weather_cache enable row level security;
 alter table public.push_subscriptions enable row level security;
 
+-- Membership check used by the policies below. SECURITY DEFINER so its read of
+-- trip_members bypasses RLS. This is essential: a policy ON trip_members that
+-- queries trip_members directly recurses forever ("infinite recursion detected
+-- in policy for relation trip_members"). Routing every membership test through
+-- this function breaks that cycle and keeps the other tables' policies cheap.
+create or replace function public.is_trip_member(p_trip_id uuid, p_user_id uuid)
+returns boolean
+language sql security definer stable set search_path = public as $$
+  select exists (
+    select 1 from public.trip_members
+    where trip_id = p_trip_id and user_id = p_user_id
+  );
+$$;
+revoke all on function public.is_trip_member(uuid, uuid) from public;
+grant execute on function public.is_trip_member(uuid, uuid) to anon, authenticated;
+
 -- Users: anyone authenticated can read; only own row write
 drop policy if exists "Users can read all profiles" on public.users;
 create policy "Users can read all profiles" on public.users for select using (auth.uid() is not null);
@@ -154,8 +170,10 @@ grant execute on function public.update_my_profile(text, text) to authenticated;
 
 -- Trips: members can see their trips
 drop policy if exists "Trip members can view trips" on public.trips;
+-- creator_id clause lets the creator read their trip via INSERT ... RETURNING
+-- before the trip_members row exists (see createTrip in app/trips/new/actions.ts).
 create policy "Trip members can view trips" on public.trips for select
-  using (exists (select 1 from public.trip_members tm where tm.trip_id = id and tm.user_id = auth.uid()));
+  using (auth.uid() = creator_id or public.is_trip_member(id, auth.uid()));
 drop policy if exists "Authenticated users can create trips" on public.trips;
 create policy "Authenticated users can create trips" on public.trips for insert
   with check (auth.uid() = creator_id);
@@ -169,7 +187,7 @@ create policy "Creators can delete their trips" on public.trips for delete
 -- Trip members
 drop policy if exists "Members can view trip membership" on public.trip_members;
 create policy "Members can view trip membership" on public.trip_members for select
-  using (exists (select 1 from public.trip_members tm2 where tm2.trip_id = trip_id and tm2.user_id = auth.uid()));
+  using (public.is_trip_member(trip_id, auth.uid()));
 drop policy if exists "Users can join trips" on public.trip_members;
 create policy "Users can join trips" on public.trip_members for insert
   with check (auth.uid() = user_id);
@@ -183,13 +201,13 @@ create policy "Creators can remove members" on public.trip_members for delete
 -- Packing items: trip members can CRUD
 drop policy if exists "Trip members can view packing items" on public.packing_items;
 create policy "Trip members can view packing items" on public.packing_items for select
-  using (exists (select 1 from public.trip_members tm where tm.trip_id = trip_id and tm.user_id = auth.uid()));
+  using (public.is_trip_member(trip_id, auth.uid()));
 drop policy if exists "Trip members can add packing items" on public.packing_items;
 create policy "Trip members can add packing items" on public.packing_items for insert
-  with check (exists (select 1 from public.trip_members tm where tm.trip_id = trip_id and tm.user_id = auth.uid()));
+  with check (public.is_trip_member(trip_id, auth.uid()));
 drop policy if exists "Trip members can update packing items" on public.packing_items;
 create policy "Trip members can update packing items" on public.packing_items for update
-  using (exists (select 1 from public.trip_members tm where tm.trip_id = trip_id and tm.user_id = auth.uid()));
+  using (public.is_trip_member(trip_id, auth.uid()));
 drop policy if exists "Creators can delete packing items" on public.packing_items;
 create policy "Creators can delete packing items" on public.packing_items for delete
   using (exists (select 1 from public.trips t where t.id = trip_id and t.creator_id = auth.uid()));
@@ -197,7 +215,7 @@ create policy "Creators can delete packing items" on public.packing_items for de
 -- Item claims
 drop policy if exists "Trip members can view claims" on public.item_claims;
 create policy "Trip members can view claims" on public.item_claims for select
-  using (exists (select 1 from public.trip_members tm where tm.trip_id = trip_id and tm.user_id = auth.uid()));
+  using (public.is_trip_member(trip_id, auth.uid()));
 drop policy if exists "Users can manage own claims" on public.item_claims;
 create policy "Users can manage own claims" on public.item_claims for insert
   with check (auth.uid() = user_id);
@@ -211,10 +229,10 @@ create policy "Users can delete own claims" on public.item_claims for delete
 -- Messages
 drop policy if exists "Trip members can view messages" on public.messages;
 create policy "Trip members can view messages" on public.messages for select
-  using (exists (select 1 from public.trip_members tm where tm.trip_id = trip_id and tm.user_id = auth.uid()));
+  using (public.is_trip_member(trip_id, auth.uid()));
 drop policy if exists "Trip members can send messages" on public.messages;
 create policy "Trip members can send messages" on public.messages for insert
-  with check (auth.uid() = user_id and exists (select 1 from public.trip_members tm where tm.trip_id = trip_id and tm.user_id = auth.uid()));
+  with check (auth.uid() = user_id and public.is_trip_member(trip_id, auth.uid()));
 drop policy if exists "Creators can pin messages" on public.messages;
 create policy "Creators can pin messages" on public.messages for update
   using (exists (select 1 from public.trips t where t.id = trip_id and t.creator_id = auth.uid()));
@@ -230,7 +248,7 @@ create policy "Users can update own notifications" on public.notifications for u
 -- Weather cache
 drop policy if exists "Trip members can view weather" on public.weather_cache;
 create policy "Trip members can view weather" on public.weather_cache for select
-  using (exists (select 1 from public.trip_members tm where tm.trip_id = trip_id and tm.user_id = auth.uid()));
+  using (public.is_trip_member(trip_id, auth.uid()));
 
 -- Push subscriptions
 drop policy if exists "Users manage own subscriptions" on public.push_subscriptions;
