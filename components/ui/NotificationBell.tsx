@@ -41,8 +41,12 @@ export default function NotificationBell() {
     }
     load()
 
+    // Unique channel name per subscription. AppNav renders two NotificationBells
+    // (desktop sidebar + mobile nav); a shared topic would make the second call
+    // `.on()` on the first's already-subscribed channel and throw.
+    const channelName = `notifications:${userId}:${Math.random().toString(36).slice(2)}`
     const channel = sb
-      .channel(`notifications:${userId}`)
+      .channel(channelName)
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` },

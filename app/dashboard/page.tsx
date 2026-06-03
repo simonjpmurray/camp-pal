@@ -1,5 +1,4 @@
 import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import AppNav from '@/components/ui/AppNav'
 import { format, differenceInCalendarDays, parseISO } from 'date-fns'
@@ -8,13 +7,18 @@ import { MapPin, Calendar, Users, Plus, Flame } from 'lucide-react'
 export default async function DashboardPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-  const userId = user.id
+  // No redirect when there's no session yet: a brand-new visitor may hit this
+  // before <AnonymousAuth /> has signed them in client-side. We render the empty
+  // state and <AnonymousAuth /> calls router.refresh() once the session exists,
+  // re-running this with their (initially empty) trip list.
+  const userId = user?.id ?? null
 
-  const { data: memberships } = await supabase
-    .from('trip_members')
-    .select('trip_id, role')
-    .eq('user_id', userId)
+  const { data: memberships } = userId
+    ? await supabase
+        .from('trip_members')
+        .select('trip_id, role')
+        .eq('user_id', userId)
+    : { data: null }
 
   const tripIds = memberships?.map(m => m.trip_id) ?? []
 

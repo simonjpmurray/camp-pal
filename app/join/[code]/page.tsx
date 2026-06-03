@@ -14,6 +14,8 @@ export default async function JoinPage({ params }: { params: Promise<{ code: str
 
   const { data: { user } } = await supabase.auth.getUser()
 
+  // Skip the preview and go straight to the trip if they're already a member.
+  // Anonymous users count here too — they have a real auth.uid().
   if (user && trip) {
     const { data: membership } = await supabase
       .from('trip_members')
@@ -34,8 +36,6 @@ export default async function JoinPage({ params }: { params: Promise<{ code: str
         end_date: trip.end_date,
         memberCount: Number(trip.member_count ?? 0),
       } : null}
-      code={code}
-      isLoggedIn={!!user}
     />
   )
 }

@@ -18,11 +18,9 @@ interface TripInfo {
 
 interface Props {
   trip: TripInfo | null
-  code: string
-  isLoggedIn: boolean
 }
 
-export default function JoinClient({ trip, code, isLoggedIn }: Props) {
+export default function JoinClient({ trip }: Props) {
   const router = useRouter()
   const supabase = createClient()
   const [joining, setJoining] = useState(false)
@@ -32,10 +30,18 @@ export default function JoinClient({ trip, code, isLoggedIn }: Props) {
     setJoining(true)
     setError('')
 
-    const { data: { user } } = await supabase.auth.getUser()
+    // Friction-free: if the visitor has no session yet (e.g. they followed the
+    // invite link in a fresh browser before <AnonymousAuth /> ran), sign them in
+    // anonymously here so they can join without hitting a login wall.
+    let { data: { user } } = await supabase.auth.getUser()
     if (!user) {
-      router.push(`/login?redirectTo=/join/${code}`)
-      return
+      const { data, error: anonErr } = await supabase.auth.signInAnonymously()
+      if (anonErr || !data.user) {
+        setError(anonErr?.message ?? 'Could not start a session. Please try again.')
+        setJoining(false)
+        return
+      }
+      user = data.user
     }
 
     if (!trip) return
@@ -50,9 +56,15 @@ export default function JoinClient({ trip, code, isLoggedIn }: Props) {
       return
     }
 
-    // Notify other members (non-fatal)
+    // Notify other members (non-fatal). Prefer the display name; fall back to the
+    // email prefix (real accounts) and finally a generic label.
     try {
-      const joinerName = user.email?.split('@')[0] ?? 'Someone'
+      const { data: profile } = await supabase
+        .from('users')
+        .select('name')
+        .eq('id', user.id)
+        .maybeSingle()
+      const joinerName = profile?.name?.trim() || user.email?.split('@')[0] || 'Someone'
       await fetch('/api/push/notify-join', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -110,32 +122,17 @@ export default function JoinClient({ trip, code, isLoggedIn }: Props) {
           </div>
         )}
 
-        {isLoggedIn ? (
-          <button
-            onClick={handleJoin}
-            disabled={joining}
-            className="w-full text-white py-3 rounded-xl font-medium transition-opacity disabled:opacity-60 hover:opacity-90"
-            style={{ background: 'var(--forest)' }}
-          >
-            {joining ? 'Joining…' : 'Join this trip 🏕️'}
-          </button>
-        ) : (
-          <div className="space-y-2">
-            <Link
-              href={`/login?signup=true&redirectTo=/join/${code}`}
-              className="block w-full text-center text-white py-3 rounded-xl font-medium hover:opacity-90 transition-opacity"
-              style={{ background: 'var(--forest)' }}
-            >
-              Sign up to join
-            </Link>
-            <Link
-              href={`/login?redirectTo=/join/${code}`}
-              className="block w-full text-center border border-stone-200 text-stone-700 py-3 rounded-xl font-medium hover:bg-stone-50 transition-colors text-sm"
-            >
-              Already have an account? Sign in
-            </Link>
-          </div>
-        )}
+        <button
+          onClick={handleJoin}
+          disabled={joining}
+          className="w-full text-white py-3 rounded-xl font-medium transition-opacity disabled:opacity-60 hover:opacity-90"
+          style={{ background: 'var(--forest)' }}
+        >
+          {joining ? 'Joining…' : 'Join this trip 🏕️'}
+        </button>
+        <p className="text-center text-xs text-stone-400 mt-3">
+          No account needed — you can add an email later to access from another device.
+        </p>
       </div>
     </div>
   )

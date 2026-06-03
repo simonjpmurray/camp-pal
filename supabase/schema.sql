@@ -2,13 +2,22 @@
 create extension if not exists "uuid-ossp";
 
 -- Users (mirrors auth.users)
+-- `email` is nullable: anonymous sign-ins (Supabase Anonymous Auth) create an
+-- auth.users row with a null email, and the handle_new_user() trigger mirrors
+-- that here. A null email is replaced when the user later upgrades (linkIdentity
+-- / updateUser). NULLs are distinct under the unique index, so many anonymous
+-- users coexist fine.
 create table if not exists public.users (
   id uuid references auth.users(id) on delete cascade primary key,
-  email text not null unique,
+  email text unique,
   name text not null default '',
   avatar_url text,
   created_at timestamptz default now()
 );
+
+-- Idempotent: relax the NOT NULL on pre-existing deployments where the table
+-- was created before anonymous sign-ins were supported.
+alter table public.users alter column email drop not null;
 
 -- Trips
 create table if not exists public.trips (
@@ -234,11 +243,18 @@ create policy "Users manage own subscriptions" on public.push_subscriptions for 
 create or replace function public.handle_new_user()
 returns trigger language plpgsql security definer set search_path = public as $$
 begin
+  -- Anonymous users arrive with a null email and no metadata, so every fallback
+  -- below can be null/empty — coalesce to '' to satisfy the NOT NULL on `name`.
+  -- The DisplayNamePrompt then asks anonymous users what to call them.
   insert into public.users (id, email, name, avatar_url)
   values (
     new.id,
     new.email,
-    coalesce(new.raw_user_meta_data->>'full_name', split_part(new.email, '@', 1)),
+    coalesce(
+      nullif(new.raw_user_meta_data->>'full_name', ''),
+      nullif(split_part(coalesce(new.email, ''), '@', 1), ''),
+      ''
+    ),
     new.raw_user_meta_data->>'avatar_url'
   )
   on conflict (id) do update set

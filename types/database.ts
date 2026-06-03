@@ -31,21 +31,21 @@ export interface Database {
       users: {
         Row: {
           id: string
-          email: string
+          email: string | null
           name: string
           avatar_url: string | null
           created_at: string
         }
         Insert: {
           id: string
-          email: string
+          email?: string | null
           name: string
           avatar_url?: string | null
           created_at?: string
         }
         Update: {
           id?: string
-          email?: string
+          email?: string | null
           name?: string
           avatar_url?: string | null
         }

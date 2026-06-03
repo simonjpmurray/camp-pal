@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
+import { AnonymousAuth } from '@/components/auth/AnonymousAuth'
+import { DisplayNamePrompt } from '@/components/auth/DisplayNamePrompt'
 
 export const metadata: Metadata = {
   title: 'CampFire — Plan your adventure together',
@@ -41,7 +43,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
         <script dangerouslySetInnerHTML={{ __html: darkModeScript }} />
       </head>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <AnonymousAuth />
+        <DisplayNamePrompt />
+        {children}
+      </body>
     </html>
   )
 }

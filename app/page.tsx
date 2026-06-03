@@ -14,7 +14,7 @@ export default function LandingPage() {
           <Link href="/login" className="text-sm text-stone-600 hover:text-stone-900 transition-colors px-3 py-2">
             Sign in
           </Link>
-          <Link href="/login?signup=true" className="text-sm text-white px-4 py-2 rounded-full hover:opacity-90 transition-opacity"
+          <Link href="/dashboard" className="text-sm text-white px-4 py-2 rounded-full hover:opacity-90 transition-opacity"
             style={{ background: 'var(--forest)' }}>
             Get started
           </Link>
@@ -36,10 +36,10 @@ export default function LandingPage() {
           CampFire helps friend groups plan camping trips together — shared packing lists with weather-smart gear suggestions, real-time chat, and no more &ldquo;who&rsquo;s bringing the stove?&rdquo; chaos.
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <Link href="/login?signup=true"
+          <Link href="/trips/new"
             className="text-white px-8 py-3.5 rounded-full text-base font-medium hover:opacity-90 transition-opacity"
             style={{ background: 'var(--forest)' }}>
-            Start planning — it&rsquo;s free
+            Start planning — no signup needed
           </Link>
           <Link href="/login"
             className="border border-stone-300 text-stone-700 px-8 py-3.5 rounded-full text-base font-medium hover:bg-stone-100 transition-colors">

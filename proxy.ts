@@ -1,6 +1,5 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
-import { safeRedirect } from '@/lib/safe-redirect'
 
 export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
@@ -27,17 +26,15 @@ export async function proxy(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   const { pathname } = request.nextUrl
 
-  const protectedRoutes = ['/dashboard', '/trips', '/profile']
-  const isProtected = protectedRoutes.some(r => pathname.startsWith(r))
+  // No protected-route redirect anymore: anonymous sign-ins (handled client-side
+  // by <AnonymousAuth />) mean every visitor gets a session, so /dashboard,
+  // /trips and /profile are reachable without a login wall. This middleware now
+  // only refreshes Supabase auth cookies (above) and steers /login.
 
-  if (isProtected && !user) {
-    const loginUrl = request.nextUrl.clone()
-    loginUrl.pathname = '/login'
-    loginUrl.searchParams.set('redirectTo', safeRedirect(pathname))
-    return NextResponse.redirect(loginUrl)
-  }
-
-  if (pathname === '/login' && user) {
+  // Only fully-signed-up users are bounced off /login to the dashboard.
+  // Anonymous users are sent there deliberately to "Save your access", so they
+  // must be allowed through.
+  if (pathname === '/login' && user && !user.is_anonymous) {
     const dashboardUrl = request.nextUrl.clone()
     dashboardUrl.pathname = '/dashboard'
     return NextResponse.redirect(dashboardUrl)
