@@ -1,4 +1,4 @@
-const CACHE_NAME = 'campfire-v2'
+const CACHE_NAME = 'campfire-v3'
 const OFFLINE_URLS = [
   '/',
   '/dashboard',

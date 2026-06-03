@@ -11,11 +11,13 @@ export default function PushSetup() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return
+
+    // Register the SW (or, in dev, tear down any stale one) first — must run
+    // regardless of whether the push banner was previously dismissed.
+    registerServiceWorker()
+
     const already = localStorage.getItem('push-setup-dismissed')
     if (already) return
-
-    // Register SW regardless of permission state
-    registerServiceWorker()
 
     // Check existing permission
     if ('Notification' in window) {

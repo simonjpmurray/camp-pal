@@ -1,6 +1,23 @@
 export async function registerServiceWorker(): Promise<ServiceWorkerRegistration | null> {
   if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return null
 
+  // In development the SW's cache-first strategy serves stale JS chunks
+  // (Turbopack reuses chunk URLs across rebuilds), which surfaces as confusing
+  // "my fix isn't taking effect" bugs. Skip registration in dev, and proactively
+  // unregister any worker + clear caches left over from a prod build or an
+  // earlier dev session so the page self-heals on the next load.
+  if (process.env.NODE_ENV !== 'production') {
+    try {
+      const regs = await navigator.serviceWorker.getRegistrations()
+      await Promise.all(regs.map(r => r.unregister()))
+      if ('caches' in window) {
+        const keys = await caches.keys()
+        await Promise.all(keys.map(k => caches.delete(k)))
+      }
+    } catch { /* best-effort cleanup */ }
+    return null
+  }
+
   try {
     const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' })
     return reg
