@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
+import { Analytics } from '@vercel/analytics/next'
 import { AnonymousAuth } from '@/components/auth/AnonymousAuth'
 import { DisplayNamePrompt } from '@/components/auth/DisplayNamePrompt'
 
@@ -47,6 +48,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <AnonymousAuth />
         <DisplayNamePrompt />
         {children}
+        <Analytics />
       </body>
     </html>
   )
