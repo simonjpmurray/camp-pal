@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { track } from '@vercel/analytics/react'
 import { createClient } from '@/lib/supabase/client'
 
 /**
@@ -34,6 +35,7 @@ export function AnonymousAuth() {
           )
           return
         }
+        track('anon_session_created')
         router.refresh()
       })
     })
