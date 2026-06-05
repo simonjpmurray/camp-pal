@@ -151,6 +151,14 @@ export default function AppNav() {
       {/* Mobile bottom nav */}
       <nav className="md:hidden fixed bottom-0 inset-x-0 border-t flex items-center justify-around px-4 py-2 z-50"
         style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+        <Link
+          href="/"
+          className="flex flex-col items-center gap-1 px-4 py-1.5 rounded-xl text-xs font-medium transition-colors"
+          style={{ color: 'var(--forest)' }}
+        >
+          <Flame className="w-5 h-5" />
+          Home
+        </Link>
         {navItems.map(item => (
           <Link
             key={item.href}
