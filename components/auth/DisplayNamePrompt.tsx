@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { track } from '@vercel/analytics/react'
 import { createClient } from '@/lib/supabase/client'
 import { Flame } from 'lucide-react'
 
@@ -64,6 +65,7 @@ export function DisplayNamePrompt() {
       setError(error.message)
       return
     }
+    track('anon_setup_complete')
     setOpen(false)
     router.refresh()
   }
