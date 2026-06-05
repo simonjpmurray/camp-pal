@@ -96,7 +96,9 @@ export default function JoinClient({ trip }: Props) {
     <div className="min-h-screen flex items-center justify-center px-4" style={{ background: 'var(--background)' }}>
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <Flame className="w-10 h-10 mx-auto mb-3" style={{ color: 'var(--forest)' }} />
+          <Link href="/" className="inline-block mb-3">
+            <Flame className="w-10 h-10" style={{ color: 'var(--forest)' }} />
+          </Link>
           <p className="text-stone-500 text-sm">You&apos;re invited to join</p>
           <h1 className="font-display text-3xl font-bold mt-1" style={{ color: 'var(--foreground)' }}>{trip.name}</h1>
         </div>

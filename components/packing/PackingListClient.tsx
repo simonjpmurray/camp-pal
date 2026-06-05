@@ -37,15 +37,15 @@ interface Props {
 type Filter = 'all' | 'unclaimed' | 'mine' | 'covered'
 
 const HIGHLIGHT_COLORS = {
-  red: { bg: '#fff0f0', border: '#fecaca', badge: 'bg-red-100 text-red-700' },
-  yellow: { bg: '#fffbf0', border: '#fde68a', badge: 'bg-amber-100 text-amber-700' },
-  grey: { bg: 'white', border: '#e7e5e4', badge: 'bg-stone-100 text-stone-500' },
+  red: { bg: 'var(--highlight-red-bg)', border: 'var(--highlight-red-border)', badge: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' },
+  yellow: { bg: 'var(--highlight-yellow-bg)', border: 'var(--highlight-yellow-border)', badge: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300' },
+  grey: { bg: 'var(--surface)', border: 'var(--border)', badge: 'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400' },
 }
 
 const TYPE_META: Record<ItemType, { label: string; pill: string; icon: typeof Users }> = {
-  group: { label: 'Group', pill: 'bg-blue-50 text-blue-700 border-blue-200', icon: Users },
-  personal: { label: 'Individual', pill: 'bg-purple-50 text-purple-700 border-purple-200', icon: UserIcon },
-  scaled: { label: 'Scaled', pill: 'bg-amber-50 text-amber-700 border-amber-200', icon: BarChart3 },
+  group: { label: 'Group', pill: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800', icon: Users },
+  personal: { label: 'Individual', pill: 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800', icon: UserIcon },
+  scaled: { label: 'Scaled', pill: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800', icon: BarChart3 },
 }
 
 const SCALED_LABEL: Record<ScaledMultiplier, string> = {
@@ -61,7 +61,7 @@ function getItemType(item: PackingItem): ItemType {
 }
 
 function highlightLabel(level: PackingItem['weather_highlight']) {
-  return level === 'red' ? 'Must-bring' : level === 'yellow' ? 'Recommended' : 'Optional'
+  return level === 'red' ? 'Essential' : level === 'yellow' ? 'Recommended' : 'Optional'
 }
 
 function ItemTypeBadge({

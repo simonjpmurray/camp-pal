@@ -54,7 +54,7 @@ export default function AppNav() {
       {/* Desktop sidebar */}
       <aside className="hidden md:flex flex-col w-96 shrink-0 border-r min-h-screen px-4 py-5"
         style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
-        <Link href="/dashboard" className="flex items-center gap-2 px-3 mb-6">
+        <Link href="/" className="flex items-center gap-2 px-3 mb-6">
           <Flame className="w-6 h-6" style={{ color: 'var(--forest)' }} />
           <span className="font-display text-lg font-semibold" style={{ color: 'var(--forest)' }}>CampFire</span>
         </Link>

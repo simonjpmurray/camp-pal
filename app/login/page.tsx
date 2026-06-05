@@ -268,13 +268,6 @@ function LoginForm() {
 
       <GoogleButton onClick={handleGoogleLogin} label="Continue with Google" />
 
-      <p className="text-center text-sm text-stone-500 mt-5">
-        {mode === 'login' ? (
-          <>No account? <button onClick={() => setMode('signup')} className="font-medium" style={{ color: 'var(--forest)' }}>Sign up</button></>
-        ) : (
-          <>Already have an account? <button onClick={() => setMode('login')} className="font-medium" style={{ color: 'var(--forest)' }}>Sign in</button></>
-        )}
-      </p>
     </Shell>
   )
 }

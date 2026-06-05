@@ -106,7 +106,7 @@ export default async function TripDetailPage({ params }: { params: Promise<{ id:
             <div className="text-2xl font-bold font-display text-red-500">
               {redItems}
             </div>
-            <div className="text-xs text-stone-500 mt-0.5">must-bring</div>
+            <div className="text-xs text-stone-500 mt-0.5">essential</div>
           </div>
         </div>
 
@@ -136,7 +136,7 @@ export default async function TripDetailPage({ params }: { params: Promise<{ id:
             <Package className="w-5 h-5" style={{ color: 'var(--forest)' }} />
             <div>
               <div>Packing list</div>
-              {redItems > 0 && <div className="text-xs text-red-500 font-normal">{redItems} must-bring items</div>}
+              {redItems > 0 && <div className="text-xs text-red-500 font-normal">{redItems} essential items</div>}
             </div>
           </Link>
           <Link href={`/trips/${id}/chat`}

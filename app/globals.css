@@ -13,6 +13,10 @@
   --tan: #c8a96e;
   --tan-light: #e8d5b0;
   --bark: #6b4c2a;
+  --highlight-red-bg: #fff0f0;
+  --highlight-red-border: #fecaca;
+  --highlight-yellow-bg: #fffbf0;
+  --highlight-yellow-border: #fde68a;
 }
 
 .dark {
@@ -28,6 +32,10 @@
   --tan: #c8a96e;
   --tan-light: #3a2e1a;
   --bark: #b08060;
+  --highlight-red-bg: #2d1515;
+  --highlight-red-border: #7f1d1d;
+  --highlight-yellow-bg: #1f1a0a;
+  --highlight-yellow-border: #78350f;
 }
 
 @theme inline {
