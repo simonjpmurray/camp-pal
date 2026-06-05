@@ -91,7 +91,7 @@ export default function NewTripPage() {
           {/* Dates */}
           <div className="bg-white rounded-2xl border border-stone-100 p-5">
             <label className="block text-sm font-semibold text-stone-700 mb-3">Dates *</label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs text-stone-500 mb-1">Start</label>
                 <input
@@ -99,7 +99,7 @@ export default function NewTripPage() {
                   value={startDate}
                   onChange={e => setStartDate(e.target.value)}
                   required
-                  className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm outline-none transition-shadow focus:shadow-[0_0_0_2px_#c0532a40]"
+                  className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-base min-h-[44px] outline-none transition-shadow focus:shadow-[0_0_0_2px_#c0532a40]"
                 />
               </div>
               <div>
@@ -110,7 +110,7 @@ export default function NewTripPage() {
                   min={startDate}
                   onChange={e => setEndDate(e.target.value)}
                   required
-                  className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm outline-none transition-shadow focus:shadow-[0_0_0_2px_#c0532a40]"
+                  className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-base min-h-[44px] outline-none transition-shadow focus:shadow-[0_0_0_2px_#c0532a40]"
                 />
               </div>
             </div>
