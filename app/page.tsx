@@ -5,20 +5,11 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen" style={{ background: 'var(--background)' }}>
       {/* Nav */}
-      <nav className="flex items-center justify-between px-6 py-4 max-w-6xl mx-auto">
-        <div className="flex items-center gap-2">
+      <nav className="flex items-center px-6 py-4 max-w-6xl mx-auto">
+        <Link href="/" className="flex items-center gap-2">
           <Flame className="w-7 h-7" style={{ color: 'var(--forest)' }} />
           <span className="font-display text-xl font-semibold" style={{ color: 'var(--forest)' }}>CampFire</span>
-        </div>
-        <div className="flex items-center gap-3">
-          <Link href="/login" className="text-sm text-stone-600 hover:text-stone-900 transition-colors px-3 py-2">
-            Sign in
-          </Link>
-          <Link href="/dashboard" className="text-sm text-white px-4 py-2 rounded-full hover:opacity-90 transition-opacity"
-            style={{ background: 'var(--forest)' }}>
-            Get started
-          </Link>
-        </div>
+        </Link>
       </nav>
 
       {/* Hero */}
@@ -41,10 +32,6 @@ export default function LandingPage() {
             style={{ background: 'var(--forest)' }}>
             Start planning — no signup needed
           </Link>
-          <Link href="/login"
-            className="border border-stone-300 text-stone-700 px-8 py-3.5 rounded-full text-base font-medium hover:bg-stone-100 transition-colors">
-            Sign in
-          </Link>
         </div>
       </section>
 
@@ -55,7 +42,7 @@ export default function LandingPage() {
             {
               icon: <CloudSun className="w-6 h-6" />,
               title: 'Weather-Smart Packing',
-              desc: 'Fetches your trip forecast and flags must-bring items. Rain jacket gets a red badge if rain is expected — no guesswork.',
+              desc: 'Fetches your trip forecast and flags essential items. Rain jacket gets a red badge if rain is expected — no guesswork.',
               bg: '#fbe9d8', fg: '#c0532a',
             },
             {
