@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import type { User } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import { Flame, MapPin, Calendar, Users, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
@@ -25,15 +26,35 @@ export default function JoinClient({ trip }: Props) {
   const supabase = createClient()
   const [joining, setJoining] = useState(false)
   const [error, setError] = useState('')
+  const [authUser, setAuthUser] = useState<User | null>(null)
+
+  useEffect(() => {
+    // Seed immediately from local storage (no network round-trip).
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) setAuthUser(session.user)
+    })
+
+    // Stay in sync with <AnonymousAuth /> completing its signInAnonymously() call.
+    // Without this, handleJoin() would race AnonymousAuth: both would call
+    // signInAnonymously() concurrently, creating two separate anonymous users.
+    // The one that resolved last would overwrite the session, so the user who
+    // actually joined the trip would no longer be the active session — RLS then
+    // denies access when they're redirected to the trip page.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setAuthUser(session?.user ?? null)
+    })
+
+    return () => subscription.unsubscribe()
+  }, []) // supabase is a stable singleton from createBrowserClient
 
   async function handleJoin() {
     setJoining(true)
     setError('')
 
-    // Friction-free: if the visitor has no session yet (e.g. they followed the
-    // invite link in a fresh browser before <AnonymousAuth /> ran), sign them in
-    // anonymously here so they can join without hitting a login wall.
-    let { data: { user } } = await supabase.auth.getUser()
+    // Use the user already resolved by <AnonymousAuth /> via onAuthStateChange.
+    // Only fall back to signInAnonymously() if that never fired (e.g. Anonymous
+    // Sign-ins is disabled in the Supabase dashboard).
+    let user = authUser
     if (!user) {
       const { data, error: anonErr } = await supabase.auth.signInAnonymously()
       if (anonErr || !data.user) {
