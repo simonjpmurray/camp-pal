@@ -24,11 +24,22 @@ export default function AppNav() {
   const tripIdMatch = pathname.match(TRIP_PATH_RE)
   const activeTripId = tripIdMatch ? tripIdMatch[1] : null
   const [isAnonymous, setIsAnonymous] = useState(false)
+  const [displayName, setDisplayName] = useState<string | null>(null)
 
   useEffect(() => {
     function refresh() {
-      supabase.auth.getUser().then(({ data: { user } }) => {
+      supabase.auth.getUser().then(async ({ data: { user } }) => {
         setIsAnonymous(!!user?.is_anonymous)
+        if (user) {
+          const { data: profile } = await supabase
+            .from('users')
+            .select('name')
+            .eq('id', user.id)
+            .maybeSingle()
+          setDisplayName(profile?.name?.trim() || null)
+        } else {
+          setDisplayName(null)
+        }
       })
     }
     refresh()
@@ -44,7 +55,7 @@ export default function AppNav() {
 
   const navItems = [
     { href: '/dashboard', label: 'Trips', icon: <LayoutDashboard className="w-5 h-5" /> },
-    { href: '/profile', label: 'Profile', icon: <User className="w-5 h-5" /> },
+    { href: '/profile', label: displayName || 'Profile', icon: <User className="w-5 h-5" /> },
   ]
 
   return (
@@ -79,7 +90,7 @@ export default function AppNav() {
                 : { color: '#000' }}
             >
               {item.icon}
-              {item.label}
+              <span className="truncate max-w-[7rem]">{item.label}</span>
             </Link>
           ))}
         </nav>
@@ -167,7 +178,7 @@ export default function AppNav() {
             style={pathname.startsWith(item.href) ? { color: 'var(--forest)' } : { color: 'var(--muted)' }}
           >
             {item.icon}
-            {item.label}
+            <span className="truncate max-w-[4rem]">{item.label}</span>
           </Link>
         ))}
         <Link

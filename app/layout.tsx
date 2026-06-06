@@ -3,6 +3,7 @@ import './globals.css'
 import { Analytics } from '@vercel/analytics/next'
 import { AnonymousAuth } from '@/components/auth/AnonymousAuth'
 import { DisplayNamePrompt } from '@/components/auth/DisplayNamePrompt'
+import { WelcomeToast } from '@/components/ui/WelcomeToast'
 
 export const metadata: Metadata = {
   title: 'CampFire — Plan your adventure together',
@@ -47,6 +48,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-full flex flex-col">
         <AnonymousAuth />
         <DisplayNamePrompt />
+        <WelcomeToast />
         {children}
         <Analytics />
       </body>
