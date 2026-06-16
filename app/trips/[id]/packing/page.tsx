@@ -56,15 +56,16 @@ export default async function PackingPage({ params }: { params: Promise<{ id: st
     <div className="flex min-h-screen" style={{ background: 'var(--background)' }}>
       <AppNav />
       <main className="flex-1 mx-auto w-full px-4 sm:px-6 py-6 pb-24 md:pb-6 max-w-5xl">
-        <div className="flex items-center gap-3 mb-6">
-          <Link href={`/trips/${id}`} className="p-2 rounded-xl hover:bg-stone-100 transition-colors">
-            <ArrowLeft className="w-4 h-4 text-stone-500" />
+        <div className="flex items-center gap-3 mb-2">
+          <Link href={`/trips/${id}`} className="p-2 rounded-[3px] hover:opacity-70 transition-opacity">
+            <ArrowLeft className="w-4 h-4" style={{ color: 'var(--muted-text)' }} />
           </Link>
           <div>
-            <h1 className="font-display text-2xl font-bold" style={{ color: 'var(--foreground)' }}>Packing List</h1>
-            <p className="text-sm text-stone-500">{trip.name}</p>
+            <div className="kicker">{trip.name}</div>
+            <h1 className="font-display text-4xl font-bold tracking-tight" style={{ color: 'var(--ink)' }}>Packing manifest</h1>
           </div>
         </div>
+        <div className="h-[2px] mb-6" style={{ background: 'var(--ink)' }} />
 
         <PackingListClient
           tripId={id}

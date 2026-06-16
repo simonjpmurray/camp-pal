@@ -113,12 +113,12 @@ export default function ChatClient({ tripId, currentUserId, currentUser, isCreat
     <div className="flex flex-col flex-1 overflow-hidden">
       {/* Pinned messages */}
       {pinnedMessages.length > 0 && (
-        <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 shrink-0">
-          <p className="text-xs font-semibold text-amber-700 mb-1.5 flex items-center gap-1">
+        <div className="border-b px-4 py-2 shrink-0" style={{ background: 'var(--tint-recommended)', borderColor: 'rgba(188,138,54,0.4)' }}>
+          <p className="kicker mb-1.5 flex items-center gap-1" style={{ color: 'var(--ochre)' }}>
             <Pin className="w-3 h-3" /> Pinned
           </p>
           {pinnedMessages.map(m => (
-            <p key={m.id} className="text-xs text-amber-800 truncate">{m.users?.name}: {m.content}</p>
+            <p key={m.id} className="text-xs truncate" style={{ color: 'var(--ink)' }}>{m.users?.name}: {m.content}</p>
           ))}
         </div>
       )}
@@ -147,22 +147,20 @@ export default function ChatClient({ tripId, currentUserId, currentUser, isCreat
 
               <div className={`max-w-[75%] ${isMe ? 'items-end' : 'items-start'} flex flex-col gap-0.5`}>
                 {!isSameAuthor && !isMe && (
-                  <span className="text-xs font-medium text-stone-500 ml-1">{user.name}</span>
+                  <span className="font-mono-data text-[10px] uppercase tracking-wider ml-1" style={{ color: 'var(--muted-text)' }}>{user.name}</span>
                 )}
                 <div className="flex items-end gap-1.5">
-                  {msg.pinned && <Pin className="w-3 h-3 text-amber-400 shrink-0" />}
+                  {msg.pinned && <Pin className="w-3 h-3 shrink-0" style={{ color: 'var(--ochre)' }} />}
                   <div
-                    className={`px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed ${
-                      isMe
-                        ? 'text-white rounded-tr-sm'
-                        : 'bg-white border border-stone-100 text-stone-800 rounded-tl-sm'
-                    }`}
-                    style={isMe ? { background: 'var(--forest)' } : {}}
+                    className="px-3.5 py-2.5 text-sm leading-relaxed"
+                    style={isMe
+                      ? { background: 'var(--ember)', color: '#fff', borderRadius: '12px 3px 12px 12px' }
+                      : { background: 'var(--canvas-raised)', border: '1px solid var(--hairline)', color: 'var(--ink)', borderRadius: '3px 12px 12px 12px' }}
                   >
                     {msg.content}
                   </div>
                 </div>
-                <span className="text-xs text-stone-400 px-1">
+                <span className="font-mono-data text-[10px] uppercase tracking-wider px-1" style={{ color: 'var(--muted-text)' }}>
                   {format(new Date(msg.created_at), 'HH:mm')}
                 </span>
               </div>
@@ -183,11 +181,11 @@ export default function ChatClient({ tripId, currentUserId, currentUser, isCreat
       </div>
 
       {/* Input */}
-      <div className="border-t border-stone-200 bg-white px-4 py-3 shrink-0">
+      <div className="border-t px-4 py-3 shrink-0" style={{ borderColor: 'var(--hairline)', background: 'var(--canvas)' }}>
         <div className="flex items-end gap-2">
           <Avatar user={currentUser} size="sm" />
-          <div className="flex-1 border border-stone-200 rounded-2xl overflow-hidden flex items-end"
-            style={{ background: '#fafaf9' }}>
+          <div className="flex-1 border rounded-full overflow-hidden flex items-end"
+            style={{ background: 'var(--canvas-raised)', borderColor: 'var(--hairline-strong)' }}>
             <textarea
               ref={inputRef}
               value={input}
@@ -196,14 +194,14 @@ export default function ChatClient({ tripId, currentUserId, currentUser, isCreat
               placeholder="Message the group…"
               rows={1}
               className="flex-1 px-4 py-2.5 text-sm resize-none outline-none bg-transparent max-h-32"
-              style={{ lineHeight: '1.4' }}
+              style={{ lineHeight: '1.4', color: 'var(--ink)' }}
             />
           </div>
           <button
             onClick={sendMessage}
             disabled={!input.trim() || sending}
             className="w-9 h-9 rounded-full flex items-center justify-center text-white transition-opacity disabled:opacity-40 shrink-0"
-            style={{ background: 'var(--forest)' }}
+            style={{ background: 'var(--ember)' }}
           >
             <Send className="w-4 h-4" />
           </button>

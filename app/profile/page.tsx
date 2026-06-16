@@ -71,15 +71,18 @@ export default function ProfilePage() {
     <div className="flex min-h-screen" style={{ background: 'var(--background)' }}>
       <AppNav />
       <main className="flex-1 mx-auto w-full px-4 sm:px-6 py-6 pb-24 md:pb-6 max-w-2xl">
-        <h1 className="font-display text-3xl font-bold mb-8" style={{ color: 'var(--foreground)' }}>Profile</h1>
+        <div className="kicker">Your account</div>
+        <h1 className="font-display text-4xl font-bold tracking-tight mb-2" style={{ color: 'var(--ink)' }}>Profile</h1>
+        <div className="h-[2px] mb-8" style={{ background: 'var(--ink)' }} />
 
         {isAnonymous && (
           <Link
             href="/login"
-            className="flex items-start gap-3 rounded-2xl border border-stone-100 bg-white p-4 mb-5 hover:shadow-md transition-shadow"
+            className="flex items-start gap-3 rounded-[4px] p-4 mb-5 transition-opacity hover:opacity-90"
+            style={{ border: '1.5px dashed rgba(212,84,30,0.4)', background: 'var(--tint-essential)' }}
           >
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: '#fbe9d8' }}>
-              <Mail className="w-4.5 h-4.5" style={{ color: 'var(--forest)' }} />
+            <div className="w-9 h-9 rounded-[3px] flex items-center justify-center shrink-0" style={{ background: 'var(--ember)' }}>
+              <Mail className="w-4.5 h-4.5 text-white" />
             </div>
             <div>
               <p className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>Save your access</p>
@@ -91,27 +94,27 @@ export default function ProfilePage() {
         )}
 
         <form onSubmit={handleSave} className="space-y-5">
-          <div className="bg-white rounded-2xl border border-stone-100 p-5 space-y-4">
+          <div className="rounded-[4px] border bg-[var(--canvas-raised)] border-[color:var(--hairline)] p-5 space-y-4">
             <div>
-              <label className="block text-sm font-semibold text-stone-700 mb-2">Display name</label>
+              <label className="block kicker mb-2">Display name</label>
               <input
                 type="text"
                 value={name}
                 onChange={e => setName(e.target.value)}
                 required
-                className="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm outline-none transition-shadow"
-                onFocus={e => e.target.style.boxShadow = '0 0 0 2px #c0532a40'}
+                className="w-full border rounded-[3px] border-[color:var(--hairline-strong)] px-4 py-2.5 text-sm outline-none transition-shadow"
+                onFocus={e => e.target.style.boxShadow = '0 0 0 2px #d4541e40'}
                 onBlur={e => e.target.style.boxShadow = ''}
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-stone-700 mb-2">Email</label>
+              <label className="block kicker mb-2">Email</label>
               <input
                 type="email"
                 value={email}
                 disabled
                 placeholder={isAnonymous ? 'No email yet' : ''}
-                className="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm bg-stone-50 text-stone-400 cursor-not-allowed"
+                className="w-full border rounded-[3px] border-[color:var(--hairline-strong)] px-4 py-2.5 text-sm bg-stone-50 text-stone-400 cursor-not-allowed"
               />
               <p className="text-xs text-stone-400 mt-1">
                 {isAnonymous ? 'Add an email via "Save your access" above.' : 'Email cannot be changed here'}
@@ -122,10 +125,10 @@ export default function ProfilePage() {
           <button
             type="submit"
             disabled={saving || saved}
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-medium text-sm transition-all disabled:opacity-80"
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-[3px] font-semibold text-sm transition-all disabled:opacity-80"
             style={{
-              background: saved ? '#fbe9d8' : 'var(--forest)',
-              color: saved ? 'var(--forest)' : 'white',
+              background: saved ? 'var(--tint-essential)' : 'var(--ember)',
+              color: saved ? 'var(--ember)' : 'white',
             }}
           >
             {saving && <Loader2 className="w-4 h-4 animate-spin" />}

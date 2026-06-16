@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { track } from '@vercel/analytics/react'
 import { createClient } from '@/lib/supabase/client'
-import { Flame } from 'lucide-react'
 
 /**
  * One-time modal that asks anonymous users what the group should call them.
@@ -75,22 +74,24 @@ export function DisplayNamePrompt() {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center px-4"
       style={{ background: 'rgba(0,0,0,0.45)' }}>
-      <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl border border-stone-100 p-6">
+      <div className="w-full max-w-sm rounded-[4px] shadow-xl border p-6"
+        style={{ background: 'var(--canvas-raised)', borderColor: 'var(--hairline)' }}>
         <div className="flex items-center gap-2 mb-4">
-          <Flame className="w-6 h-6" style={{ color: 'var(--forest)' }} />
-          <span className="font-display text-lg font-semibold" style={{ color: 'var(--forest)' }}>
-            Welcome to CampFire
+          <span className="relative flex items-center justify-center w-7 h-7 border-2 rounded-[3px]" style={{ borderColor: 'var(--ink)' }}>
+            <span className="font-display font-bold text-base leading-none" style={{ color: 'var(--ink)' }}>C</span>
+            <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full" style={{ background: 'var(--ember)' }} />
           </span>
+          <span className="kicker" style={{ color: 'var(--ember)' }}>Welcome to CampFire</span>
         </div>
-        <h2 className="font-display text-xl font-bold mb-1" style={{ color: 'var(--foreground)' }}>
+        <h2 className="font-display text-2xl font-bold mb-1 tracking-tight" style={{ color: 'var(--ink)' }}>
           What should the group call you?
         </h2>
-        <p className="text-sm text-stone-500 mb-5">
+        <p className="text-sm mb-5" style={{ color: 'var(--muted-text)' }}>
           This is the name your crew will see in chat and on packing claims.
         </p>
 
         {error && (
-          <div className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2.5 mb-4">
+          <div className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-[3px] px-3 py-2.5 mb-4">
             {error}
           </div>
         )}
@@ -104,15 +105,16 @@ export function DisplayNamePrompt() {
             required
             maxLength={80}
             placeholder="e.g. Sam"
-            className="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm outline-none transition-shadow"
-            onFocus={e => (e.target.style.boxShadow = '0 0 0 2px #c0532a40')}
+            className="w-full border rounded-[3px] px-4 py-2.5 text-sm outline-none transition-shadow"
+            style={{ background: 'var(--canvas)', borderColor: 'var(--hairline-strong)', color: 'var(--ink)' }}
+            onFocus={e => (e.target.style.boxShadow = '0 0 0 2px #d4541e40')}
             onBlur={e => (e.target.style.boxShadow = '')}
           />
           <button
             type="submit"
             disabled={saving || !name.trim()}
-            className="w-full text-white py-2.5 rounded-xl text-sm font-medium transition-opacity disabled:opacity-60"
-            style={{ background: 'var(--forest)' }}
+            className="w-full text-white py-2.5 rounded-[3px] text-sm font-semibold transition-opacity disabled:opacity-60"
+            style={{ background: 'var(--ember)' }}
           >
             {saving ? 'Saving…' : 'Continue'}
           </button>
