@@ -24,6 +24,10 @@ export interface Database {
         Args: { new_name: string; new_avatar_url?: string | null }
         Returns: void
       }
+      set_item_priority_override: {
+        Args: { p_item_id: string; p_priority: WeatherHighlight | null }
+        Returns: void
+      }
     }
     Enums: Record<string, never>
     CompositeTypes: Record<string, never>
@@ -136,6 +140,7 @@ export interface Database {
           highlight_reason: string | null
           item_type: ItemType
           scaled_multiplier: ScaledMultiplier | null
+          priority_override: WeatherHighlight | null
           created_at: string
         }
         Insert: {
@@ -149,6 +154,7 @@ export interface Database {
           highlight_reason?: string | null
           item_type?: ItemType
           scaled_multiplier?: ScaledMultiplier | null
+          priority_override?: WeatherHighlight | null
           created_at?: string
         }
         Update: {
@@ -159,6 +165,7 @@ export interface Database {
           highlight_reason?: string | null
           item_type?: ItemType
           scaled_multiplier?: ScaledMultiplier | null
+          priority_override?: WeatherHighlight | null
         }
         Relationships: []
       }
@@ -170,6 +177,7 @@ export interface Database {
           user_id: string
           quantity_claimed: number
           confirmed: boolean
+          note: string | null
           created_at: string
         }
         Insert: {
@@ -179,11 +187,13 @@ export interface Database {
           user_id: string
           quantity_claimed: number
           confirmed?: boolean
+          note?: string | null
           created_at?: string
         }
         Update: {
           quantity_claimed?: number
           confirmed?: boolean
+          note?: string | null
         }
         Relationships: [
           {

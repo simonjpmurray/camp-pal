@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import AppNav from '@/components/ui/AppNav'
 import { format, differenceInCalendarDays, parseISO } from 'date-fns'
-import { MapPin, Calendar, Users, Plus, Flame } from 'lucide-react'
+import { MapPin, Calendar, Users, Plus, Tent } from 'lucide-react'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -54,45 +54,41 @@ export default async function DashboardPage() {
     const memberCount = trip.trip_members?.length ?? 0
 
     return (
-      <Link href={`/trips/${trip.id}`} className="block bg-white rounded-2xl border border-stone-100 shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5 p-5">
-        <div className="flex items-start justify-between mb-3">
-          <h3 className="font-display font-semibold text-lg leading-tight" style={{ color: 'var(--foreground)' }}>
+      <Link href={`/trips/${trip.id}`}
+        className="block rounded-[4px] border p-5 transition-all hover:-translate-y-0.5"
+        style={{ background: 'var(--canvas-raised)', borderColor: 'var(--hairline)' }}>
+        <div className="flex items-start justify-between gap-3 mb-3">
+          <h3 className="font-display font-semibold text-xl leading-tight" style={{ color: 'var(--ink)' }}>
             {trip.name}
           </h3>
-          {isCreator && (
-            <span className="text-xs font-medium px-2 py-0.5 rounded-full ml-2 shrink-0"
-              style={{ background: '#e8d5b0', color: '#6b4c2a' }}>
-              Creator
+          {daysUntil > 0 ? (
+            <span className="shrink-0 stamp text-center leading-tight" style={{ color: 'var(--ember)', border: '1.5px solid var(--ember)' }}>
+              {daysUntil === 1 ? '1 day' : `${daysUntil} days`}
             </span>
-          )}
+          ) : daysUntil === 0 ? (
+            <span className="shrink-0 stamp" style={{ background: 'var(--signal-red)', color: '#fff' }}>Today</span>
+          ) : null}
         </div>
 
-        <div className="space-y-1.5 text-sm text-stone-500">
+        <div className="space-y-1.5 font-mono-data text-[11px] uppercase tracking-wider" style={{ color: 'var(--muted-text)' }}>
           <div className="flex items-center gap-1.5">
             <MapPin className="w-3.5 h-3.5 shrink-0" />
             <span className="truncate">{trip.location_name}</span>
           </div>
           <div className="flex items-center gap-1.5">
             <Calendar className="w-3.5 h-3.5 shrink-0" />
-            <span>{format(parseISO(trip.start_date), 'MMM d')} – {format(parseISO(trip.end_date), 'MMM d, yyyy')}</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <Users className="w-3.5 h-3.5 shrink-0" />
-            <span>{memberCount} member{memberCount !== 1 ? 's' : ''}</span>
+            <span>{format(parseISO(trip.start_date), 'MMM d')} – {format(parseISO(trip.end_date), 'MMM d')}</span>
           </div>
         </div>
 
-        {daysUntil > 0 && (
-          <div className="mt-3 text-xs font-medium px-2.5 py-1 rounded-full inline-block"
-            style={{ background: '#fbe9d8', color: 'var(--forest)' }}>
-            {daysUntil === 1 ? 'Tomorrow!' : `${daysUntil} days away`}
-          </div>
-        )}
-        {daysUntil === 0 && (
-          <div className="mt-3 text-xs font-medium px-2.5 py-1 rounded-full inline-block bg-amber-100 text-amber-700">
-            Starting today! 🏕️
-          </div>
-        )}
+        <div className="flex items-center gap-1.5 mt-3 pt-3 border-t font-mono-data text-[11px] uppercase tracking-wider"
+          style={{ borderColor: 'var(--hairline)', color: 'var(--muted-text)' }}>
+          <Users className="w-3.5 h-3.5 shrink-0" />
+          <span>{memberCount} crew</span>
+          {isCreator && (
+            <span className="ml-auto" style={{ color: 'var(--ochre)' }}>Creator</span>
+          )}
+        </div>
       </Link>
     )
   }
@@ -101,33 +97,33 @@ export default async function DashboardPage() {
     <div className="flex min-h-screen" style={{ background: 'var(--background)' }}>
       <AppNav />
       <main className="flex-1 mx-auto w-full px-4 sm:px-6 py-6 pb-24 md:pb-6 max-w-5xl">
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-end justify-between gap-4 mb-2">
           <div>
-            <h1 className="font-display text-3xl font-bold" style={{ color: 'var(--foreground)' }}>Your Trips</h1>
-            <p className="text-sm text-stone-500 mt-1">
-              {trips.length === 0 ? 'No trips yet — create your first one!' : `${trips.length} trip${trips.length !== 1 ? 's' : ''} total`}
-            </p>
+            <div className="kicker">{trips.length === 0 ? 'No trips yet' : `${trips.length} trip${trips.length !== 1 ? 's' : ''} total`}</div>
+            <h1 className="font-display text-4xl sm:text-5xl font-bold tracking-tight" style={{ color: 'var(--ink)' }}>Your trips</h1>
           </div>
           <Link href="/trips/new"
-            className="hidden sm:flex items-center gap-1.5 text-white text-sm font-medium px-4 py-2 rounded-xl hover:opacity-90 transition-opacity"
-            style={{ background: 'var(--forest)' }}>
+            className="hidden sm:flex items-center gap-1.5 text-white text-sm font-semibold px-4 py-2 rounded-[3px] hover:opacity-90 transition-opacity shrink-0"
+            style={{ background: 'var(--ember)' }}>
             <Plus className="w-4 h-4" />
             New trip
           </Link>
         </div>
+        <div className="h-[2px] mb-8" style={{ background: 'var(--ink)' }} />
 
         {trips.length === 0 && (
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4" style={{ background: '#fbe9d8' }}>
-              <Flame className="w-8 h-8" style={{ color: 'var(--forest)' }} />
+            <div className="w-16 h-16 rounded-[4px] flex items-center justify-center mb-4 border"
+              style={{ background: 'var(--tint-essential)', borderColor: 'var(--hairline)' }}>
+              <Tent className="w-8 h-8" style={{ color: 'var(--ember)' }} />
             </div>
-            <h2 className="font-display text-xl font-semibold mb-2" style={{ color: 'var(--foreground)' }}>Plan your first adventure</h2>
-            <p className="text-stone-500 text-sm mb-6 max-w-xs">
+            <h2 className="font-display text-2xl font-semibold mb-2" style={{ color: 'var(--ink)' }}>Plan your first adventure</h2>
+            <p className="text-sm mb-6 max-w-xs" style={{ color: 'var(--muted-text)' }}>
               Create a trip, invite your crew, and coordinate gear together.
             </p>
             <Link href="/trips/new"
-              className="text-white text-sm font-medium px-6 py-2.5 rounded-xl hover:opacity-90 transition-opacity"
-              style={{ background: 'var(--forest)' }}>
+              className="text-white text-sm font-semibold px-6 py-2.5 rounded-[3px] hover:opacity-90 transition-opacity"
+              style={{ background: 'var(--ember)' }}>
               Create a trip
             </Link>
           </div>
@@ -135,7 +131,7 @@ export default async function DashboardPage() {
 
         {active.length > 0 && (
           <section className="mb-8">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-3">Active</h2>
+            <h2 className="kicker mb-3">Active now</h2>
             <div className="grid sm:grid-cols-2 gap-4">
               {active.map(t => <TripCard key={t.id} trip={t} />)}
             </div>
@@ -144,7 +140,7 @@ export default async function DashboardPage() {
 
         {upcoming.length > 0 && (
           <section className="mb-8">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-3">Upcoming</h2>
+            <h2 className="kicker mb-3">Upcoming</h2>
             <div className="grid sm:grid-cols-2 gap-4">
               {upcoming.map(t => <TripCard key={t.id} trip={t} />)}
             </div>
@@ -153,7 +149,7 @@ export default async function DashboardPage() {
 
         {past.length > 0 && (
           <section>
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-3">Past</h2>
+            <h2 className="kicker mb-3">Past</h2>
             <div className="grid sm:grid-cols-2 gap-4 opacity-60">
               {past.map(t => <TripCard key={t.id} trip={t} />)}
             </div>

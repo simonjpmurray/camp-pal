@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import type { User } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
-import { Flame, MapPin, Calendar, Users, AlertCircle } from 'lucide-react'
+import { MapPin, Calendar, Users, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 import { format, parseISO } from 'date-fns'
 
@@ -100,12 +100,13 @@ export default function JoinClient({ trip }: Props) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4" style={{ background: 'var(--background)' }}>
         <div className="text-center max-w-sm">
-          <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <AlertCircle className="w-8 h-8 text-red-400" />
+          <div className="w-16 h-16 rounded-[4px] border flex items-center justify-center mx-auto mb-4"
+            style={{ background: 'var(--tint-essential)', borderColor: 'var(--hairline)' }}>
+            <AlertCircle className="w-8 h-8" style={{ color: 'var(--signal-red)' }} />
           </div>
-          <h1 className="font-display text-2xl font-bold mb-2" style={{ color: 'var(--foreground)' }}>Invite not found</h1>
-          <p className="text-stone-500 text-sm mb-6">This invite link may have expired or is invalid.</p>
-          <Link href="/" className="text-sm font-medium" style={{ color: 'var(--forest)' }}>
+          <h1 className="font-display text-2xl font-bold mb-2 tracking-tight" style={{ color: 'var(--ink)' }}>Invite not found</h1>
+          <p className="text-sm mb-6" style={{ color: 'var(--muted-text)' }}>This invite link may have expired or is invalid.</p>
+          <Link href="/" className="font-mono-data text-[11px] uppercase tracking-widest" style={{ color: 'var(--ember)' }}>
             Go to CampFire →
           </Link>
         </div>
@@ -116,31 +117,35 @@ export default function JoinClient({ trip }: Props) {
   return (
     <div className="min-h-screen flex items-center justify-center px-4" style={{ background: 'var(--background)' }}>
       <div className="w-full max-w-sm">
-        <div className="text-center mb-8">
-          <Link href="/" className="inline-block mb-3">
-            <Flame className="w-10 h-10" style={{ color: 'var(--forest)' }} />
+        <div className="text-center mb-6">
+          <Link href="/" className="inline-flex items-center justify-center mb-3">
+            <span className="relative flex items-center justify-center w-9 h-9 border-2 rounded-[3px]" style={{ borderColor: 'var(--ink)' }}>
+              <span className="font-display font-bold text-lg leading-none" style={{ color: 'var(--ink)' }}>C</span>
+              <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full" style={{ background: 'var(--ember)' }} />
+            </span>
           </Link>
-          <p className="text-stone-500 text-sm">You&apos;re invited to join</p>
-          <h1 className="font-display text-3xl font-bold mt-1" style={{ color: 'var(--foreground)' }}>{trip.name}</h1>
+          <div className="kicker" style={{ color: 'var(--ember)' }}>You&apos;re invited</div>
+          <h1 className="font-display text-4xl font-bold mt-1 tracking-tight" style={{ color: 'var(--ink)' }}>{trip.name}</h1>
         </div>
 
-        <div className="bg-white rounded-2xl border border-stone-100 p-5 mb-4 space-y-3">
-          <div className="flex items-center gap-2 text-sm text-stone-600">
-            <MapPin className="w-4 h-4 shrink-0" style={{ color: 'var(--forest)' }} />
+        <div className="rounded-[4px] p-5 mb-4 space-y-2.5 font-mono-data text-[11px] uppercase tracking-wider"
+          style={{ border: '1.5px dashed rgba(212,84,30,0.4)', background: 'var(--tint-essential)', color: 'var(--muted-text)' }}>
+          <div className="flex items-center gap-2">
+            <MapPin className="w-4 h-4 shrink-0" style={{ color: 'var(--ember)' }} />
             {trip.location_name}
           </div>
-          <div className="flex items-center gap-2 text-sm text-stone-600">
-            <Calendar className="w-4 h-4 shrink-0" style={{ color: 'var(--forest)' }} />
-            {format(parseISO(trip.start_date), 'EEE d MMM')} – {format(parseISO(trip.end_date), 'EEE d MMM yyyy')}
+          <div className="flex items-center gap-2">
+            <Calendar className="w-4 h-4 shrink-0" style={{ color: 'var(--ember)' }} />
+            {format(parseISO(trip.start_date), 'd MMM')} – {format(parseISO(trip.end_date), 'd MMM yyyy')}
           </div>
-          <div className="flex items-center gap-2 text-sm text-stone-600">
-            <Users className="w-4 h-4 shrink-0" style={{ color: 'var(--forest)' }} />
-            {trip.memberCount} member{trip.memberCount !== 1 ? 's' : ''} already joined
+          <div className="flex items-center gap-2">
+            <Users className="w-4 h-4 shrink-0" style={{ color: 'var(--ember)' }} />
+            {trip.memberCount} crew already joined
           </div>
         </div>
 
         {error && (
-          <div className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-4">
+          <div className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-[3px] px-4 py-3 mb-4">
             {error}
           </div>
         )}
@@ -148,12 +153,12 @@ export default function JoinClient({ trip }: Props) {
         <button
           onClick={handleJoin}
           disabled={joining}
-          className="w-full text-white py-3 rounded-xl font-medium transition-opacity disabled:opacity-60 hover:opacity-90"
-          style={{ background: 'var(--forest)' }}
+          className="w-full text-white py-3 rounded-[3px] font-semibold transition-opacity disabled:opacity-60 hover:opacity-90"
+          style={{ background: 'var(--ember)' }}
         >
-          {joining ? 'Joining…' : 'Join this trip 🏕️'}
+          {joining ? 'Joining…' : 'Join the trip →'}
         </button>
-        <p className="text-center text-xs text-stone-400 mt-3">
+        <p className="text-center text-xs mt-3" style={{ color: 'var(--muted-text)' }}>
           No account needed — you can add an email later to access from another device.
         </p>
       </div>

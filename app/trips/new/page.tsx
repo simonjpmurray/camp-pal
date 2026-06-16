@@ -54,12 +54,14 @@ export default function NewTripPage() {
     <div className="flex min-h-screen" style={{ background: 'var(--background)' }}>
       <AppNav />
       <main className="flex-1 mx-auto w-full px-4 sm:px-6 py-6 pb-24 md:pb-6 max-w-3xl">
-        <Link href="/dashboard" className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-700 mb-6 transition-colors">
-          <ArrowLeft className="w-4 h-4" />
+        <Link href="/dashboard" className="inline-flex items-center gap-1.5 font-mono-data text-[11px] uppercase tracking-widest mb-6 hover:opacity-70 transition-opacity" style={{ color: 'var(--muted-text)' }}>
+          <ArrowLeft className="w-3.5 h-3.5" />
           Back
         </Link>
 
-        <h1 className="font-display text-3xl font-bold mb-6" style={{ color: 'var(--foreground)' }}>New Trip</h1>
+        <div className="kicker">New trip</div>
+        <h1 className="font-display text-4xl font-bold tracking-tight mb-2" style={{ color: 'var(--ink)' }}>Plan a new adventure</h1>
+        <div className="h-[2px] mb-6" style={{ background: 'var(--ink)' }} />
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {error && (
@@ -69,8 +71,8 @@ export default function NewTripPage() {
           )}
 
           {/* Trip name */}
-          <div className="bg-white rounded-2xl border border-stone-100 p-5">
-            <label className="block text-sm font-semibold text-stone-700 mb-2">Trip name *</label>
+          <div className="rounded-[4px] border bg-[var(--canvas-raised)] border-[color:var(--hairline)] p-5">
+            <label className="block kicker mb-2">Trip name *</label>
             <input
               type="text"
               value={name}
@@ -78,19 +80,19 @@ export default function NewTripPage() {
               required
               maxLength={80}
               placeholder="e.g. Lake District Long Weekend"
-              className="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm outline-none transition-shadow focus:shadow-[0_0_0_2px_#c0532a40]"
+              className="w-full border rounded-[3px] bg-[var(--canvas-raised)] border-[color:var(--hairline-strong)] px-4 py-2.5 text-sm outline-none transition-shadow focus:shadow-[0_0_0_2px_#d4541e40]"
             />
           </div>
 
           {/* Location */}
-          <div className="bg-white rounded-2xl border border-stone-100 p-5">
-            <label className="block text-sm font-semibold text-stone-700 mb-3">Location *</label>
+          <div className="rounded-[4px] border bg-[var(--canvas-raised)] border-[color:var(--hairline)] p-5">
+            <label className="block kicker mb-3">Location *</label>
             <LocationPicker value={location} onChange={setLocation} />
           </div>
 
           {/* Dates */}
-          <div className="bg-white rounded-2xl border border-stone-100 p-5">
-            <label className="block text-sm font-semibold text-stone-700 mb-3">Dates *</label>
+          <div className="rounded-[4px] border bg-[var(--canvas-raised)] border-[color:var(--hairline)] p-5">
+            <label className="block kicker mb-3">Dates *</label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs text-stone-500 mb-1">Start</label>
@@ -99,7 +101,7 @@ export default function NewTripPage() {
                   value={startDate}
                   onChange={e => setStartDate(e.target.value)}
                   required
-                  className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-base min-h-[44px] outline-none transition-shadow focus:shadow-[0_0_0_2px_#c0532a40]"
+                  className="w-full border rounded-[3px] bg-[var(--canvas-raised)] border-[color:var(--hairline-strong)] px-3 py-2.5 text-base min-h-[44px] outline-none transition-shadow focus:shadow-[0_0_0_2px_#d4541e40]"
                 />
               </div>
               <div>
@@ -110,33 +112,33 @@ export default function NewTripPage() {
                   min={startDate}
                   onChange={e => setEndDate(e.target.value)}
                   required
-                  className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-base min-h-[44px] outline-none transition-shadow focus:shadow-[0_0_0_2px_#c0532a40]"
+                  className="w-full border rounded-[3px] bg-[var(--canvas-raised)] border-[color:var(--hairline-strong)] px-3 py-2.5 text-base min-h-[44px] outline-none transition-shadow focus:shadow-[0_0_0_2px_#d4541e40]"
                 />
               </div>
             </div>
           </div>
 
           {/* Description */}
-          <div className="bg-white rounded-2xl border border-stone-100 p-5">
-            <label className="block text-sm font-semibold text-stone-700 mb-2">Notes / description</label>
+          <div className="rounded-[4px] border bg-[var(--canvas-raised)] border-[color:var(--hairline)] p-5">
+            <label className="block kicker mb-2">Notes / description</label>
             <textarea
               value={description}
               onChange={e => setDescription(e.target.value)}
               placeholder="Campsite details, booking links, what to expect..."
               rows={3}
               maxLength={2000}
-              className="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm outline-none transition-shadow resize-none focus:shadow-[0_0_0_2px_#c0532a40]"
+              className="w-full border rounded-[3px] bg-[var(--canvas-raised)] border-[color:var(--hairline-strong)] px-4 py-2.5 text-sm outline-none transition-shadow resize-none focus:shadow-[0_0_0_2px_#d4541e40]"
             />
           </div>
 
           <button
             type="submit"
             disabled={isPending}
-            className="w-full flex items-center justify-center gap-2 text-white py-3 rounded-xl font-medium transition-opacity disabled:opacity-60 hover:opacity-90"
-            style={{ background: 'var(--forest)' }}
+            className="w-full flex items-center justify-center gap-2 text-white py-3 rounded-[3px] font-semibold transition-opacity disabled:opacity-60 hover:opacity-90"
+            style={{ background: 'var(--ember)' }}
           >
             {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
-            {isPending ? 'Creating trip…' : 'Create trip & generate packing list'}
+            {isPending ? 'Creating trip…' : 'Create trip & build manifest →'}
           </button>
         </form>
       </main>

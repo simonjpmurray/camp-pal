@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { safeRedirect } from '@/lib/safe-redirect'
-import { Flame, Mail, Lock, AlertCircle, Check } from 'lucide-react'
+import { Mail, Lock, AlertCircle, Check } from 'lucide-react'
 import Link from 'next/link'
 
 function Spinner() {
@@ -19,13 +19,16 @@ function Shell({ title, subtitle, children }: { title: string; subtitle: string;
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12" style={{ background: 'var(--background)' }}>
       <div className="w-full max-w-sm">
-        <Link href="/" className="flex items-center justify-center gap-2 mb-8">
-          <Flame className="w-8 h-8" style={{ color: 'var(--forest)' }} />
-          <span className="font-display text-2xl font-semibold" style={{ color: 'var(--forest)' }}>CampFire</span>
+        <Link href="/" className="flex items-center justify-center gap-2.5 mb-8">
+          <span className="relative flex items-center justify-center w-8 h-8 border-2 rounded-[3px]" style={{ borderColor: 'var(--ink)' }}>
+            <span className="font-display font-bold text-lg leading-none" style={{ color: 'var(--ink)' }}>C</span>
+            <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full" style={{ background: 'var(--ember)' }} />
+          </span>
+          <span className="font-display text-2xl font-semibold tracking-tight" style={{ color: 'var(--ink)' }}>CampFire</span>
         </Link>
-        <div className="bg-white rounded-2xl shadow-sm border border-stone-100 p-8">
-          <h1 className="font-display text-2xl font-bold mb-1" style={{ color: 'var(--foreground)' }}>{title}</h1>
-          <p className="text-sm text-stone-500 mb-6">{subtitle}</p>
+        <div className="rounded-[4px] border p-8" style={{ background: 'var(--canvas-raised)', borderColor: 'var(--hairline)' }}>
+          <h1 className="font-display text-3xl font-bold tracking-tight mb-1" style={{ color: 'var(--ink)' }}>{title}</h1>
+          <p className="text-sm mb-6" style={{ color: 'var(--muted-text)' }}>{subtitle}</p>
           {children}
         </div>
       </div>
@@ -33,15 +36,15 @@ function Shell({ title, subtitle, children }: { title: string; subtitle: string;
   )
 }
 
-const inputClass = 'w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm outline-none transition-shadow'
-function focusRing(e: React.FocusEvent<HTMLInputElement>) { e.target.style.boxShadow = '0 0 0 2px #c0532a40' }
+const inputClass = 'w-full border rounded-[3px] px-4 py-2.5 text-sm outline-none transition-shadow bg-[var(--canvas)] border-[color:var(--hairline-strong)]'
+function focusRing(e: React.FocusEvent<HTMLInputElement>) { e.target.style.boxShadow = '0 0 0 2px #d4541e40' }
 function blurRing(e: React.FocusEvent<HTMLInputElement>) { e.target.style.boxShadow = '' }
 
 function GoogleButton({ onClick, label }: { onClick: () => void; label: string }) {
   return (
     <button
       onClick={onClick}
-      className="w-full flex items-center justify-center gap-2 border border-stone-200 rounded-xl py-2.5 text-sm font-medium text-stone-700 hover:bg-stone-50 transition-colors"
+      className="w-full flex items-center justify-center gap-2 border border-stone-200 rounded-[3px] py-2.5 text-sm font-medium text-stone-700 hover:bg-stone-50 transition-colors"
     >
       <svg className="w-4 h-4" viewBox="0 0 24 24">
         <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -128,7 +131,7 @@ function UpgradeForm() {
           </div>
         </div>
         <button type="submit" disabled={loading}
-          className="w-full text-white py-2.5 rounded-xl text-sm font-medium transition-opacity disabled:opacity-60"
+          className="w-full text-white py-2.5 rounded-[3px] text-sm font-medium transition-opacity disabled:opacity-60"
           style={{ background: 'var(--forest)' }}>
           {loading ? 'Saving…' : 'Save with email'}
         </button>
@@ -136,7 +139,7 @@ function UpgradeForm() {
 
       <div className="relative my-5">
         <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-stone-200" /></div>
-        <div className="relative flex justify-center"><span className="bg-white px-3 text-xs text-stone-400">or</span></div>
+        <div className="relative flex justify-center"><span className="px-3 text-xs" style={{ background: 'var(--canvas-raised)', color: 'var(--muted-text)' }}>or</span></div>
       </div>
 
       <GoogleButton onClick={handleGoogleLink} label="Connect Google" />
@@ -255,7 +258,7 @@ function LoginForm() {
           </div>
         </div>
         <button type="submit" disabled={loading}
-          className="w-full text-white py-2.5 rounded-xl text-sm font-medium transition-opacity disabled:opacity-60"
+          className="w-full text-white py-2.5 rounded-[3px] text-sm font-medium transition-opacity disabled:opacity-60"
           style={{ background: 'var(--forest)' }}>
           {loading ? 'Loading…' : mode === 'login' ? 'Sign in' : 'Create account'}
         </button>
@@ -263,7 +266,7 @@ function LoginForm() {
 
       <div className="relative my-5">
         <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-stone-200" /></div>
-        <div className="relative flex justify-center"><span className="bg-white px-3 text-xs text-stone-400">or</span></div>
+        <div className="relative flex justify-center"><span className="px-3 text-xs" style={{ background: 'var(--canvas-raised)', color: 'var(--muted-text)' }}>or</span></div>
       </div>
 
       <GoogleButton onClick={handleGoogleLogin} label="Continue with Google" />
@@ -277,7 +280,7 @@ function AlreadySignedIn() {
   return (
     <Shell title="You're all set" subtitle="Your account is saved — you can reach your trips from any device.">
       <Link href="/dashboard"
-        className="w-full flex items-center justify-center gap-2 text-white py-2.5 rounded-xl text-sm font-medium hover:opacity-90 transition-opacity"
+        className="w-full flex items-center justify-center gap-2 text-white py-2.5 rounded-[3px] text-sm font-medium hover:opacity-90 transition-opacity"
         style={{ background: 'var(--forest)' }}>
         <Check className="w-4 h-4" /> Go to my trips
       </Link>

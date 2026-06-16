@@ -27,21 +27,22 @@ export default function SidebarWeatherCompact({ tripId }: { tripId: string }) {
   }, [tripId])
 
   return (
-    <div className="rounded-xl border px-3 py-3" style={{ borderColor: 'var(--border)', background: 'var(--forest-pale)' }}>
-      <div className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--forest)' }}>Forecast</div>
-      {loading && <div className="text-xs animate-pulse" style={{ color: 'var(--muted)' }}>Loading…</div>}
-      {error && <div className="text-xs" style={{ color: 'var(--muted)' }}>Forecast unavailable</div>}
+    <div className="rounded-[3px] border px-3 py-3"
+      style={{ borderColor: 'rgba(240,234,217,0.12)', background: 'rgba(240,234,217,0.05)' }}>
+      <div className="kicker mb-2" style={{ color: 'var(--ember-bright)' }}>Forecast</div>
+      {loading && <div className="text-xs animate-pulse" style={{ color: 'rgba(240,234,217,0.5)' }}>Loading…</div>}
+      {error && <div className="text-xs" style={{ color: 'rgba(240,234,217,0.5)' }}>Forecast unavailable</div>}
       {!loading && !error && forecast?.days?.length ? (
-        <div className="space-y-1.5">
+        <div className="space-y-1.5" style={{ color: '#efe8d8' }}>
           {forecast.days.slice(0, 4).map(day => (
             <div key={day.date} className="flex items-center justify-between text-xs">
-              <span className="font-medium">{format(new Date(day.date + 'T12:00:00'), 'EEE')}</span>
+              <span className="font-mono-data text-[10px] uppercase tracking-wider" style={{ color: 'rgba(240,234,217,0.7)' }}>{format(new Date(day.date + 'T12:00:00'), 'EEE')}</span>
               <div className="flex items-center gap-2">
                 <WeatherIcon code={day.weatherCode} className="w-3.5 h-3.5" />
                 <span className="font-semibold tabular-nums">{Math.round(day.tempMax)}°</span>
                 <span className="tabular-nums opacity-60">{Math.round(day.tempMin)}°</span>
                 {day.precipitationProbabilityMax > 30 && (
-                  <span className="text-blue-600 font-medium tabular-nums">{Math.round(day.precipitationProbabilityMax)}%</span>
+                  <span className="font-medium tabular-nums" style={{ color: 'var(--dusk-blue)' }}>{Math.round(day.precipitationProbabilityMax)}%</span>
                 )}
               </div>
             </div>

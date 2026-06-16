@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { Flame, LayoutDashboard, User, LogOut, Plus, ExternalLink, Mail } from 'lucide-react'
+import { Tent, LayoutDashboard, User, LogOut, Plus, ExternalLink, Mail } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import DarkModeToggle from './DarkModeToggle'
 import PushSetup from './PushSetup'
@@ -62,37 +62,44 @@ export default function AppNav() {
     <>
       <PushSetup />
 
-      {/* Desktop sidebar */}
-      <aside className="hidden md:flex flex-col w-96 shrink-0 border-r min-h-screen px-4 py-5"
-        style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
-        <Link href="/" className="flex items-center gap-2 px-3 mb-6">
-          <Flame className="w-6 h-6" style={{ color: 'var(--forest)' }} />
-          <span className="font-display text-lg font-semibold" style={{ color: 'var(--forest)' }}>CampFire</span>
+      {/* Desktop sidebar — Pine field-journal shell */}
+      <aside className="hidden md:flex flex-col w-[248px] shrink-0 min-h-screen px-4 py-5 text-[#efe8d8]"
+        style={{ background: 'var(--pine)' }}>
+        <Link href="/" className="flex items-center gap-2.5 px-2 mb-7">
+          <span className="relative flex items-center justify-center w-7 h-7 border-2 rounded-[3px]"
+            style={{ borderColor: '#efe8d8' }}>
+            <span className="font-display font-bold text-base leading-none" style={{ color: '#efe8d8' }}>C</span>
+            <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full" style={{ background: 'var(--ember-bright)' }} />
+          </span>
+          <span className="font-display text-lg font-semibold tracking-tight" style={{ color: '#efe8d8' }}>CampFire</span>
         </Link>
 
         <Link
           href="/trips/new"
-          className="flex items-center gap-2 text-white text-sm font-medium px-3 py-2.5 rounded-xl mb-4 hover:opacity-90 transition-opacity"
-          style={{ background: 'var(--forest)' }}
+          className="flex items-center gap-2 text-white text-sm font-semibold px-3 py-2.5 rounded-[3px] mb-5 hover:opacity-90 transition-opacity"
+          style={{ background: 'var(--ember)' }}
         >
           <Plus className="w-4 h-4" />
           New trip
         </Link>
 
         <nav className="space-y-1 mb-4">
-          {navItems.map(item => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors"
-              style={pathname.startsWith(item.href)
-                ? { background: 'var(--forest)', color: 'white' }
-                : { color: '#000' }}
-            >
-              {item.icon}
-              <span className="truncate max-w-[7rem]">{item.label}</span>
-            </Link>
-          ))}
+          {navItems.map(item => {
+            const active = pathname.startsWith(item.href)
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="flex items-center gap-2.5 px-3 py-2.5 rounded-[3px] text-sm font-medium transition-colors"
+                style={active
+                  ? { background: 'rgba(212,84,30,0.18)', color: 'var(--ember-bright)', boxShadow: 'inset 2px 0 0 var(--ember)' }
+                  : { color: 'rgba(240,234,217,0.7)' }}
+              >
+                {item.icon}
+                <span className="truncate max-w-[7rem]">{item.label}</span>
+              </Link>
+            )
+          })}
         </nav>
 
         {activeTripId && (
@@ -102,7 +109,7 @@ export default function AppNav() {
         )}
 
         <div className="mb-4">
-          <div className="text-xs font-semibold uppercase tracking-wider mb-2 px-3" style={{ color: 'var(--muted)' }}>Outdoor</div>
+          <div className="kicker mb-2 px-3" style={{ color: 'rgba(240,234,217,0.4)' }}>Outdoor</div>
           <div className="space-y-1">
             {EXTERNAL_LINKS.map(link => (
               <a
@@ -110,9 +117,9 @@ export default function AppNav() {
                 href={link.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-between px-3 py-2 rounded-xl text-sm font-medium transition-colors hover:opacity-80"
-                style={{ color: '#000' }}
-                onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-hover)')}
+                className="flex items-center justify-between px-3 py-2 rounded-[3px] text-sm font-medium transition-colors"
+                style={{ color: 'rgba(240,234,217,0.7)' }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(240,234,217,0.08)')}
                 onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
               >
                 <span>{link.label}</span>
@@ -125,7 +132,7 @@ export default function AppNav() {
         <div className="flex-1" />
 
         <div className="flex items-center justify-between px-3 mt-4 mb-2">
-          <span className="text-xs" style={{ color: 'var(--muted)' }}>Theme</span>
+          <span className="kicker" style={{ color: 'rgba(240,234,217,0.4)' }}>Theme</span>
           <div className="flex items-center gap-1">
             <NotificationBell />
             <DarkModeToggle />
@@ -137,9 +144,9 @@ export default function AppNav() {
         {isAnonymous ? (
           <Link
             href="/login"
-            className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors"
-            style={{ color: '#000' }}
-            onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-hover)')}
+            className="flex items-center gap-2.5 px-3 py-2.5 rounded-[3px] text-sm font-medium transition-colors"
+            style={{ color: 'rgba(240,234,217,0.7)' }}
+            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(240,234,217,0.08)')}
             onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
           >
             <Mail className="w-5 h-5" />
@@ -148,9 +155,9 @@ export default function AppNav() {
         ) : (
           <button
             onClick={handleSignOut}
-            className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors"
-            style={{ color: '#000' }}
-            onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-hover)')}
+            className="flex items-center gap-2.5 px-3 py-2.5 rounded-[3px] text-sm font-medium transition-colors"
+            style={{ color: 'rgba(240,234,217,0.7)' }}
+            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(240,234,217,0.08)')}
             onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
           >
             <LogOut className="w-5 h-5" />
@@ -159,23 +166,23 @@ export default function AppNav() {
         )}
       </aside>
 
-      {/* Mobile bottom nav */}
+      {/* Mobile bottom tab bar */}
       <nav className="md:hidden fixed bottom-0 inset-x-0 border-t flex items-center justify-around px-4 py-2 z-50"
         style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
         <Link
           href="/"
-          className="flex flex-col items-center gap-1 px-4 py-1.5 rounded-xl text-xs font-medium transition-colors"
-          style={{ color: 'var(--forest)' }}
+          className="flex flex-col items-center gap-1 px-4 py-1.5 rounded-[3px] text-[10px] font-semibold uppercase tracking-wider transition-colors"
+          style={{ color: 'var(--ember)' }}
         >
-          <Flame className="w-5 h-5" />
+          <Tent className="w-5 h-5" />
           Home
         </Link>
         {navItems.map(item => (
           <Link
             key={item.href}
             href={item.href}
-            className="flex flex-col items-center gap-1 px-4 py-1.5 rounded-xl text-xs font-medium transition-colors"
-            style={pathname.startsWith(item.href) ? { color: 'var(--forest)' } : { color: 'var(--muted)' }}
+            className="flex flex-col items-center gap-1 px-4 py-1.5 rounded-[3px] text-[10px] font-semibold uppercase tracking-wider transition-colors"
+            style={pathname.startsWith(item.href) ? { color: 'var(--ember)' } : { color: 'var(--muted)' }}
           >
             {item.icon}
             <span className="truncate max-w-[4rem]">{item.label}</span>
@@ -183,8 +190,8 @@ export default function AppNav() {
         ))}
         <Link
           href="/trips/new"
-          className="flex flex-col items-center gap-1 px-4 py-1.5 rounded-xl text-xs font-medium text-white"
-          style={{ background: 'var(--forest)' }}
+          className="flex flex-col items-center gap-1 px-4 py-1.5 rounded-[3px] text-[10px] font-semibold uppercase tracking-wider text-white"
+          style={{ background: 'var(--ember)' }}
         >
           <Plus className="w-5 h-5" />
           New

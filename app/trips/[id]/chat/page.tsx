@@ -46,13 +46,14 @@ export default async function ChatPage({ params }: { params: Promise<{ id: strin
       <AppNav />
       <main className="flex-1 flex flex-col max-h-screen overflow-hidden">
         {/* Header */}
-        <div className="flex items-center gap-3 px-4 sm:px-6 py-4 border-b border-stone-200 bg-white shrink-0">
-          <Link href={`/trips/${id}`} className="p-2 rounded-xl hover:bg-stone-100 transition-colors">
-            <ArrowLeft className="w-4 h-4 text-stone-500" />
+        <div className="flex items-center gap-3 px-4 sm:px-6 py-4 border-b shrink-0"
+          style={{ borderColor: 'var(--hairline)', background: 'var(--canvas-raised)' }}>
+          <Link href={`/trips/${id}`} className="p-2 rounded-[3px] hover:opacity-70 transition-opacity">
+            <ArrowLeft className="w-4 h-4" style={{ color: 'var(--muted-text)' }} />
           </Link>
           <div>
-            <h1 className="font-display text-xl font-bold" style={{ color: 'var(--foreground)' }}>Group Chat</h1>
-            <p className="text-xs text-stone-500">{trip.name}</p>
+            <h1 className="font-display text-2xl font-bold tracking-tight" style={{ color: 'var(--ink)' }}>Group chat</h1>
+            <p className="kicker">{trip.name}</p>
           </div>
         </div>
 

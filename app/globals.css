@@ -1,85 +1,173 @@
 @import "tailwindcss";
 
+/* ============================================================
+   CampFire "Field Edition" design tokens
+   Expedition field-journal × premium outdoor magazine.
+   Legacy var names (--forest, --surface, --border, …) are kept
+   and remapped onto the new palette so existing components keep
+   working while they are progressively restyled.
+   ============================================================ */
 :root {
-  --background: #fcefdb;
-  --foreground: #1a1a1a;
-  --surface: #ffffff;
-  --surface-hover: #f7e3c2;
-  --border: #e8d5b8;
-  --muted: #78716c;
-  --forest: #c0532a;
-  --forest-light: #d96b3a;
-  --forest-pale: #fbe9d8;
-  --tan: #c8a96e;
+  /* New semantic palette */
+  --canvas: #efe8d8;          /* primary paper background */
+  --canvas-raised: #fbf7ee;   /* cards / inputs on canvas */
+  --ink: #1c1a17;             /* primary text, hard rules */
+  --pine: #202c25;            /* dark blocks: sidebar, hero, footer */
+  --pine-raised: #2a382f;     /* raised surfaces on pine */
+  --ember: #d4541e;           /* primary accent / CTAs (on light) */
+  --ember-bright: #e86a2e;    /* accent on dark backgrounds */
+  --dusk-blue: #46606b;       /* secondary — individual kit, info */
+  --ochre: #bc8a36;           /* tertiary — recommended, scaled, pinned */
+  --signal-red: #c0331a;      /* essential stamp fill */
+  --confirm-green: #3f7d4f;   /* claimed / packed checks */
+  --muted-text: #6b6453;      /* secondary text on canvas */
+  --mono-text: #8a6a3f;       /* mono labels / kickers on canvas */
+  --hairline: rgba(28, 26, 23, 0.12);
+  --hairline-strong: rgba(28, 26, 23, 0.18);
+  --tint-essential: #fbf0e6;  /* essential row fill */
+  --tint-recommended: #fbf6e8;/* recommended / scaled row fill */
+
+  /* Family Forest tokens — landing page (campfire.murraylabs.dev) */
+  --meadow:      #e8f5e2;   /* lightest sage — hero panel bg */
+  --leaf:        #5c9e3a;   /* mid forest green — primary accent, buttons */
+  --leaf-deep:   #3d7a22;   /* darker green — hover states */
+  --canopy:      #2c5a18;   /* deep forest — footer, headings, nav icon */
+  --sunlight:    #f5c842;   /* warm yellow accent — badges, logo dot */
+  --sunlight-dk: #b8920a;   /* darker yellow — text on yellow bg */
+  --moss:        #8ab87a;   /* muted sage — secondary text on green bg */
+  --parchment:   #fbf7ee;   /* warm off-white — card surfaces */
+
+  /* Legacy aliases (remapped) */
+  --background: var(--canvas);
+  --foreground: var(--ink);
+  --surface: var(--canvas-raised);
+  --surface-hover: #f3ecdc;
+  --border: var(--hairline);
+  --muted: var(--muted-text);
+  --forest: var(--ember);
+  --forest-light: var(--ember-bright);
+  --forest-pale: var(--tint-essential);
+  --tan: var(--ochre);
   --tan-light: #e8d5b0;
-  --bark: #6b4c2a;
-  --highlight-red-bg: #fff0f0;
-  --highlight-red-border: #fecaca;
-  --highlight-yellow-bg: #fffbf0;
-  --highlight-yellow-border: #fde68a;
+  --bark: var(--mono-text);
+  --highlight-red-bg: var(--tint-essential);
+  --highlight-red-border: rgba(212, 84, 30, 0.45);
+  --highlight-yellow-bg: var(--tint-recommended);
+  --highlight-yellow-border: rgba(188, 138, 54, 0.5);
+
+  /* Fonts (wired from next/font in layout.tsx) */
+  --font-display: var(--font-nunito), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-body: var(--font-nunito), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-data: var(--font-space-mono), ui-monospace, 'SFMono-Regular', monospace;
 }
 
+/* Dark "Dusk" theme */
 .dark {
-  --background: #141412;
-  --foreground: #f0ede8;
-  --surface: #1e1d1a;
-  --surface-hover: #252420;
-  --border: #2e2c28;
-  --muted: #a8a29e;
-  --forest: #e07a45;
-  --forest-light: #ec8e5a;
-  --forest-pale: #3a2218;
-  --tan: #c8a96e;
+  --canvas: #16140f;
+  --canvas-raised: #211e18;
+  --ink: #f0ead9;
+  --pine: #11150f;
+  --pine-raised: #1b211a;
+  --ember: #e86a2e;
+  --ember-bright: #f0823f;
+  --dusk-blue: #5d808d;
+  --ochre: #c79a4a;
+  --signal-red: #d3553c;
+  --confirm-green: #4f9462;
+  --muted-text: #8f897c;
+  --mono-text: #b09668;
+  --hairline: rgba(240, 234, 217, 0.12);
+  --hairline-strong: rgba(240, 234, 217, 0.2);
+  --tint-essential: #2a1a11;
+  --tint-recommended: #241f12;
+
+  --surface-hover: #2a261e;
   --tan-light: #3a2e1a;
-  --bark: #b08060;
-  --highlight-red-bg: #2d1515;
-  --highlight-red-border: #7f1d1d;
-  --highlight-yellow-bg: #1f1a0a;
-  --highlight-yellow-border: #78350f;
+  --highlight-red-border: rgba(232, 106, 46, 0.45);
+  --highlight-yellow-border: rgba(199, 154, 74, 0.5);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-canvas: var(--canvas);
+  --color-canvas-raised: var(--canvas-raised);
+  --color-ink: var(--ink);
+  --color-pine: var(--pine);
+  --color-ember: var(--ember);
+  --color-ember-bright: var(--ember-bright);
+  --color-dusk-blue: var(--dusk-blue);
+  --color-ochre: var(--ochre);
+  --color-signal-red: var(--signal-red);
+  --color-confirm-green: var(--confirm-green);
+  --font-sans: var(--font-body);
+  --font-serif: var(--font-display);
+  --font-mono: var(--font-data);
 }
 
 * {
-  transition: background-color 0.15s ease, border-color 0.15s ease;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
 }
 
+/* Editorial serif display */
 .font-display {
-  font-family: Georgia, Cambria, 'Times New Roman', serif;
+  font-family: var(--font-display);
   letter-spacing: -0.02em;
+}
+
+/* Space Mono data/kicker/label helper */
+.font-mono-data {
+  font-family: var(--font-data);
+}
+.kicker {
+  font-family: var(--font-data);
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.6875rem;
+  color: var(--mono-text);
+}
+
+/* Rubber-stamp priority tag */
+.stamp {
+  font-family: var(--font-data);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 2px 6px;
+  border-radius: 2px;
+  display: inline-block;
+  transform: rotate(-2deg);
 }
 
 html {
   scroll-behavior: smooth;
 }
 
-/* High-contrast text: force all stone greys to near-black in light mode */
+/* High-contrast text: map Tailwind stone greys onto the ink / muted hierarchy */
 .text-stone-900,
 .text-stone-800,
 .text-stone-700,
-.text-stone-600,
+.text-stone-600 { color: var(--ink) !important; }
 .text-stone-500,
-.text-stone-400 { color: #000 !important; }
+.text-stone-400 { color: var(--muted-text) !important; }
 .dark .text-stone-900,
-.dark .text-stone-800 { color: var(--foreground) !important; }
-.dark .text-stone-700 { color: #e8e3da !important; }
-.dark .text-stone-600 { color: #d4cfc4 !important; }
-.dark .text-stone-500 { color: #b8b2a6 !important; }
-.dark .text-stone-400 { color: #9c968a !important; }
+.dark .text-stone-800,
+.dark .text-stone-700 { color: var(--ink) !important; }
+.dark .text-stone-600,
+.dark .text-stone-500,
+.dark .text-stone-400 { color: var(--muted-text) !important; }
 
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #c8a96e40; border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: var(--hairline-strong); border-radius: 2px; }
 
 /* Dark mode auto overrides for hard-coded white/stone backgrounds */
 .dark .bg-white { background: var(--surface) !important; }
@@ -97,3 +185,27 @@ html {
 }
 .animate-in { animation: slide-in-from-bottom 0.3s ease-out; }
 .slide-in-from-bottom-2 { animation: slide-in-from-bottom 0.3s ease-out; }
+
+/* Landing-page tent pop-up — stagger 8 tents over ~2.3s, stay visible after */
+@keyframes tentPop {
+  0%   { transform: scale(0);    opacity: 0; }
+  55%  { transform: scale(1.2);  opacity: 1; }
+  80%  { transform: scale(0.92); opacity: 1; }
+  100% { transform: scale(1);    opacity: 1; }
+}
+.dtent {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  animation: tentPop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.dt1 { animation-delay: 0.45s; }
+.dt2 { animation-delay: 0.70s; }
+.dt3 { animation-delay: 0.95s; }
+.dt4 { animation-delay: 1.20s; }
+.dt5 { animation-delay: 1.45s; }
+.dt6 { animation-delay: 1.70s; }
+.dt7 { animation-delay: 1.95s; }
+.dt8 { animation-delay: 2.20s; }
+@media (prefers-reduced-motion: reduce) {
+  .dtent { opacity: 1; animation: none; }
+}

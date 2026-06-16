@@ -58,6 +58,11 @@ create table if not exists public.packing_items (
 );
 
 -- Item claims
+-- `note` is an optional free-text note / gear suggestion attached by the claimer.
+-- Length is capped at 280 chars (defense-in-depth; the app also enforces it).
+-- No extra RLS is needed: the note rides on a claim row already gated by the
+-- "Users can manage/update own claims" (write: auth.uid() = user_id) and
+-- "Trip members can view claims" (read) policies below.
 create table if not exists public.item_claims (
   id uuid default uuid_generate_v4() primary key,
   item_id uuid references public.packing_items(id) on delete cascade not null,
@@ -65,6 +70,7 @@ create table if not exists public.item_claims (
   user_id uuid references public.users(id) on delete cascade not null,
   quantity_claimed integer not null default 1,
   confirmed boolean not null default false,
+  note text check (note is null or char_length(note) <= 280),
   created_at timestamptz default now(),
   unique(item_id, user_id)
 );
@@ -358,3 +364,89 @@ alter table public.packing_items
 alter table public.packing_items
   add column if not exists scaled_multiplier text
     check (scaled_multiplier is null or scaled_multiplier in ('per_person', 'per_night', 'per_person_per_night'));
+
+-- =================== MIGRATION: Claim notes ===================
+-- Adds an optional, length-capped note to item_claims. No RLS change needed
+-- (see comment on the item_claims table). Run on existing databases.
+
+alter table public.item_claims
+  add column if not exists note text
+    check (note is null or char_length(note) <= 280);
+
+-- =================== MIGRATION: Priority override ===================
+-- Per-trip priority override for a packing item. When null, the UI falls back to
+-- the item's weather-derived `weather_highlight`. Stored in that same vocabulary
+-- (red/yellow/grey) so the effective value feeds the existing badge, sort order,
+-- and row colour directly. Run on existing databases.
+
+alter table public.packing_items
+  add column if not exists priority_override text
+    check (priority_override is null or priority_override in ('red', 'yellow', 'grey'));
+
+-- Owner-only write, enforced server-side. The packing_items UPDATE policy lets
+-- any trip member update a row, and RLS can't gate a single column, so the
+-- priority override is funnelled through this SECURITY DEFINER function which
+-- verifies the caller is the trip creator. The UI calls this RPC (never a direct
+-- UPDATE of priority_override). Passing null clears the override.
+create or replace function public.set_item_priority_override(p_item_id uuid, p_priority text)
+returns void
+language plpgsql security definer set search_path = public as $$
+declare
+  uid uuid := auth.uid();
+  v_trip_id uuid;
+  v_creator uuid;
+begin
+  if uid is null then
+    raise exception 'not authenticated';
+  end if;
+  if p_priority is not null and p_priority not in ('red', 'yellow', 'grey') then
+    raise exception 'invalid priority';
+  end if;
+
+  select pi.trip_id, t.creator_id
+    into v_trip_id, v_creator
+    from public.packing_items pi
+    join public.trips t on t.id = pi.trip_id
+    where pi.id = p_item_id;
+
+  if v_trip_id is null then
+    raise exception 'item not found';
+  end if;
+  if v_creator is distinct from uid then
+    raise exception 'only the trip owner can change item priority';
+  end if;
+
+  update public.packing_items
+    set priority_override = p_priority
+    where id = p_item_id;
+end;
+$$;
+revoke all on function public.set_item_priority_override(uuid, text) from public;
+grant execute on function public.set_item_priority_override(uuid, text) to authenticated;
+
+-- True column-level enforcement. The packing_items UPDATE policy allows ANY trip
+-- member to update a row, and RLS cannot restrict a single column — so without
+-- this guard a member could change priority_override via a direct UPDATE,
+-- bypassing the owner-only RPC above. This trigger rejects any change to
+-- priority_override unless the caller is the trip creator. auth.uid() resolves to
+-- the real caller even inside the SECURITY DEFINER RPC (it reads the request JWT),
+-- so the owner's legitimate writes pass. Other columns are unaffected.
+create or replace function public.enforce_priority_override_owner()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if new.priority_override is distinct from old.priority_override then
+    if not exists (
+      select 1 from public.trips t
+      where t.id = new.trip_id and t.creator_id = auth.uid()
+    ) then
+      raise exception 'only the trip owner can change item priority';
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_enforce_priority_override_owner on public.packing_items;
+create trigger trg_enforce_priority_override_owner
+  before update on public.packing_items
+  for each row execute procedure public.enforce_priority_override_owner();
