@@ -40,6 +40,18 @@ interface Claim {
 
 const NOTE_MAX = 280
 
+// Callback used by the rows to surface a failed DB write to the parent banner.
+type OnError = (msg: string) => void
+
+// Turn a Supabase/PostgREST error (or anything thrown) into a user-facing string.
+function describeError(err: unknown): string {
+  if (err && typeof err === 'object' && 'message' in err) {
+    const msg = (err as { message?: unknown }).message
+    if (typeof msg === 'string' && msg) return msg
+  }
+  return 'Something went wrong — your change was not saved. Please try again.'
+}
+
 // Optional note / gear-suggestion textarea, shared by the group & personal
 // claim editors. The parent owns the value; we cap length here as the app-layer
 // guard (the DB also has a 280-char CHECK as defense-in-depth).
@@ -322,6 +334,7 @@ function GroupItemRow({
   nightCount,
   onClaimsChange,
   onItemUpdate,
+  onError,
 }: {
   item: PackingItem
   claims: Claim[]
@@ -332,6 +345,7 @@ function GroupItemRow({
   nightCount: number
   onClaimsChange: (itemId: string, newClaims: Claim[]) => void
   onItemUpdate: (item: PackingItem) => void
+  onError: OnError
 }) {
   const supabase = createClient()
   const myClaim = claims.find(c => c.user_id === currentUserId)
@@ -358,48 +372,68 @@ function GroupItemRow({
 
   async function claimItem() {
     setLoading(true)
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('item_claims')
       .insert({ item_id: item.id, trip_id: tripId, user_id: currentUserId, quantity_claimed: qty, confirmed: true, note: note.trim() || null })
       .select('*, users(id, name, avatar_url)')
       .single()
-    if (data) onClaimsChange(item.id, [...claims, data as Claim])
-    setEditing(false)
+    if (error) {
+      console.error('claimItem failed', error)
+      onError(describeError(error))
+    } else if (data) {
+      onClaimsChange(item.id, [...claims, data as Claim])
+      setEditing(false)
+    }
     setLoading(false)
   }
 
   async function updateClaim() {
     if (!myClaim) return
     setLoading(true)
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('item_claims')
       .update({ quantity_claimed: qty, note: note.trim() || null })
       .eq('id', myClaim.id)
       .select('*, users(id, name, avatar_url)')
       .single()
-    if (data) onClaimsChange(item.id, claims.map(c => c.id === myClaim.id ? data as Claim : c))
-    setEditing(false)
+    if (error) {
+      console.error('updateClaim failed', error)
+      onError(describeError(error))
+    } else if (data) {
+      onClaimsChange(item.id, claims.map(c => c.id === myClaim.id ? data as Claim : c))
+      setEditing(false)
+    }
     setLoading(false)
   }
 
   async function unclaim() {
     if (!myClaim) return
     setLoading(true)
-    await supabase.from('item_claims').delete().eq('id', myClaim.id)
-    onClaimsChange(item.id, claims.filter(c => c.id !== myClaim.id))
+    const { error } = await supabase.from('item_claims').delete().eq('id', myClaim.id)
+    if (error) {
+      console.error('unclaim failed', error)
+      onError(describeError(error))
+    } else {
+      onClaimsChange(item.id, claims.filter(c => c.id !== myClaim.id))
+    }
     setLoading(false)
   }
 
   async function saveItemQty() {
     setLoading(true)
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('packing_items')
       .update({ quantity: Math.max(1, itemQty) })
       .eq('id', item.id)
       .select()
       .single()
-    if (data) onItemUpdate(data as PackingItem)
-    setEditingItemQty(false)
+    if (error) {
+      console.error('saveItemQty failed', error)
+      onError(describeError(error))
+    } else if (data) {
+      onItemUpdate(data as PackingItem)
+      setEditingItemQty(false)
+    }
     setLoading(false)
   }
 
@@ -433,7 +467,11 @@ function GroupItemRow({
                 const prev = item.priority_override
                 onItemUpdate({ ...item, priority_override: level })
                 const { error } = await supabase.rpc('set_item_priority_override', { p_item_id: item.id, p_priority: level })
-                if (error) onItemUpdate({ ...item, priority_override: prev })
+                if (error) {
+                  console.error('set_item_priority_override failed', error)
+                  onError(describeError(error))
+                  onItemUpdate({ ...item, priority_override: prev })
+                }
               }}
             />
             <ItemTypeBadge
@@ -443,13 +481,18 @@ function GroupItemRow({
                 const update: { item_type: ItemType; scaled_multiplier?: ScaledMultiplier | null } = { item_type: newType }
                 if (newType !== 'scaled') update.scaled_multiplier = null
                 else if (!item.scaled_multiplier) update.scaled_multiplier = 'per_person'
-                const { data } = await supabase
+                const { data, error } = await supabase
                   .from('packing_items')
                   .update(update)
                   .eq('id', item.id)
                   .select()
                   .single()
-                if (data) onItemUpdate(data as PackingItem)
+                if (error) {
+                  console.error('item_type update failed', error)
+                  onError(describeError(error))
+                } else if (data) {
+                  onItemUpdate(data as PackingItem)
+                }
               }}
             />
           </div>
@@ -582,6 +625,7 @@ function PersonalItemRow({
   isCreator,
   onClaimsChange,
   onItemUpdate,
+  onError,
 }: {
   item: PackingItem
   claims: Claim[]
@@ -591,6 +635,7 @@ function PersonalItemRow({
   isCreator: boolean
   onClaimsChange: (itemId: string, newClaims: Claim[]) => void
   onItemUpdate: (item: PackingItem) => void
+  onError: OnError
 }) {
   const supabase = createClient()
   const myClaim = claims.find(c => c.user_id === currentUserId)
@@ -603,20 +648,30 @@ function PersonalItemRow({
 
   async function confirmMine() {
     setLoading(true)
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('item_claims')
       .insert({ item_id: item.id, trip_id: tripId, user_id: currentUserId, quantity_claimed: 1, confirmed: true })
       .select('*, users(id, name, avatar_url)')
       .single()
-    if (data) onClaimsChange(item.id, [...claims, data as Claim])
+    if (error) {
+      console.error('confirmMine failed', error)
+      onError(describeError(error))
+    } else if (data) {
+      onClaimsChange(item.id, [...claims, data as Claim])
+    }
     setLoading(false)
   }
 
   async function unconfirmMine() {
     if (!myClaim) return
     setLoading(true)
-    await supabase.from('item_claims').delete().eq('id', myClaim.id)
-    onClaimsChange(item.id, claims.filter(c => c.id !== myClaim.id))
+    const { error } = await supabase.from('item_claims').delete().eq('id', myClaim.id)
+    if (error) {
+      console.error('unconfirmMine failed', error)
+      onError(describeError(error))
+    } else {
+      onClaimsChange(item.id, claims.filter(c => c.id !== myClaim.id))
+    }
     setLoading(false)
   }
 
@@ -628,14 +683,19 @@ function PersonalItemRow({
   async function saveNote() {
     if (!myClaim) return
     setLoading(true)
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('item_claims')
       .update({ note: note.trim() || null })
       .eq('id', myClaim.id)
       .select('*, users(id, name, avatar_url)')
       .single()
-    if (data) onClaimsChange(item.id, claims.map(c => c.id === myClaim.id ? data as Claim : c))
-    setEditingNote(false)
+    if (error) {
+      console.error('saveNote failed', error)
+      onError(describeError(error))
+    } else if (data) {
+      onClaimsChange(item.id, claims.map(c => c.id === myClaim.id ? data as Claim : c))
+      setEditingNote(false)
+    }
     setLoading(false)
   }
 
@@ -666,7 +726,11 @@ function PersonalItemRow({
                 const prev = item.priority_override
                 onItemUpdate({ ...item, priority_override: level })
                 const { error } = await supabase.rpc('set_item_priority_override', { p_item_id: item.id, p_priority: level })
-                if (error) onItemUpdate({ ...item, priority_override: prev })
+                if (error) {
+                  console.error('set_item_priority_override failed', error)
+                  onError(describeError(error))
+                  onItemUpdate({ ...item, priority_override: prev })
+                }
               }}
             />
             <ItemTypeBadge
@@ -676,13 +740,18 @@ function PersonalItemRow({
                 const update: { item_type: ItemType; scaled_multiplier?: ScaledMultiplier | null } = { item_type: newType }
                 if (newType !== 'scaled') update.scaled_multiplier = null
                 else if (!item.scaled_multiplier) update.scaled_multiplier = 'per_person'
-                const { data } = await supabase
+                const { data, error } = await supabase
                   .from('packing_items')
                   .update(update)
                   .eq('id', item.id)
                   .select()
                   .single()
-                if (data) onItemUpdate(data as PackingItem)
+                if (error) {
+                  console.error('item_type update failed', error)
+                  onError(describeError(error))
+                } else if (data) {
+                  onItemUpdate(data as PackingItem)
+                }
               }}
             />
           </div>
@@ -798,6 +867,8 @@ export default function PackingListClient({
   const [filter, setFilter] = useState<Filter>('all')
   const [activeTab, setActiveTab] = useState<'group' | 'individual'>('group')
   const [regenerating, setRegenerating] = useState(false)
+  // Transient banner for failed DB writes — surfaces errors the handlers used to swallow.
+  const [actionError, setActionError] = useState<string | null>(null)
   // Add-custom-item state. `addingSection` holds the sectionKey (`<prefix>:<category>`)
   // of the one section whose inline add form is currently open, or null when closed.
   // The category is implied by the section, so there is no category picker.
@@ -949,14 +1020,25 @@ export default function PackingListClient({
 
   async function regenerate() {
     setRegenerating(true)
+    setActionError(null)
     try {
-      await fetch(`/api/trips/${tripId}/generate-packing`, { method: 'POST' })
+      const res = await fetch(`/api/trips/${tripId}/generate-packing`, { method: 'POST' })
+      if (!res.ok) {
+        const body = await res.json().catch(() => null)
+        const msg = body?.error || `Regenerate failed (${res.status})`
+        console.error('regenerate failed', msg)
+        setActionError(msg)
+        return
+      }
       const [{ data: freshItems }, { data: freshClaims }] = await Promise.all([
         supabase.from('packing_items').select('*').eq('trip_id', tripId).order('category').order('name'),
         supabase.from('item_claims').select('*, users(id, name, avatar_url)').eq('trip_id', tripId),
       ])
       if (freshItems) setItems(freshItems)
       if (freshClaims) setClaims(freshClaims as Claim[])
+    } catch (err) {
+      console.error('regenerate threw', err)
+      setActionError(describeError(err))
     } finally {
       setRegenerating(false)
     }
@@ -985,8 +1067,11 @@ export default function PackingListClient({
       item_type: newItemType,
       scaled_multiplier: newItemType === 'scaled' ? newItemMultiplier : null,
     }
-    const { data } = await supabase.from('packing_items').insert(insert).select().single()
-    if (data) {
+    const { data, error } = await supabase.from('packing_items').insert(insert).select().single()
+    if (error) {
+      console.error('addCustomItem failed', error)
+      setActionError(describeError(error))
+    } else if (data) {
       setItems(prev => [...prev, data])
       setNewItemName('')
       setNewItemQty(1)
@@ -1127,6 +1212,24 @@ export default function PackingListClient({
 
   return (
     <div>
+      {/* Action error banner — surfaces failed DB writes (e.g. schema drift). */}
+      {actionError && (
+        <div
+          className="flex items-start gap-3 rounded-[4px] border p-3 mb-4 text-sm"
+          style={{ background: 'var(--tint-essential)', borderColor: 'var(--highlight-red-border)', color: 'var(--ink)' }}
+          role="alert"
+        >
+          <span className="flex-1">{actionError}</span>
+          <button
+            onClick={() => setActionError(null)}
+            className="font-mono-data text-[11px] uppercase tracking-wider shrink-0 hover:opacity-70"
+            style={{ color: 'var(--muted-text)' }}
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
       {/* Dual coverage meters */}
       <div className="rounded-[4px] border p-4 mb-4"
         style={{ background: 'var(--canvas-raised)', borderColor: 'var(--hairline)' }}>
@@ -1207,6 +1310,7 @@ export default function PackingListClient({
               nightCount={nightCount}
               onClaimsChange={handleClaimsChange}
               onItemUpdate={handleItemUpdate}
+              onError={setActionError}
             />
           ))}
         </div>
@@ -1226,6 +1330,7 @@ export default function PackingListClient({
               isCreator={isCreator}
               onClaimsChange={handleClaimsChange}
               onItemUpdate={handleItemUpdate}
+              onError={setActionError}
             />
           ))}
         </div>
