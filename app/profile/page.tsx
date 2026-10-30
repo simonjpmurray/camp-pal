@@ -28,15 +28,13 @@ export default function ProfilePage() {
 
       const { data: profile } = await supabase
         .from('users')
-        .select('name, email')
+        .select('name')
         .eq('id', user.id)
         .maybeSingle()
 
       if (cancelled) return
-      if (profile) {
-        setName(profile.name)
-        setEmail(profile.email ?? '')
-      }
+      if (profile) setName(profile.name)
+      setEmail(user.email ?? '')
       setLoading(false)
     }
 
