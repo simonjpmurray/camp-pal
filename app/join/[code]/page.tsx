@@ -36,6 +36,7 @@ export default async function JoinPage({ params }: { params: Promise<{ code: str
         end_date: trip.end_date,
         memberCount: Number(trip.member_count ?? 0),
       } : null}
+      inviteCode={code}
     />
   )
 }

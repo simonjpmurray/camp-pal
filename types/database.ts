@@ -9,6 +9,10 @@ export interface Database {
   public: {
     Views: Record<string, never>
     Functions: {
+      join_trip_by_invite: {
+        Args: { code: string }
+        Returns: void
+      }
       get_trip_by_invite: {
         Args: { code: string }
         Returns: Array<{

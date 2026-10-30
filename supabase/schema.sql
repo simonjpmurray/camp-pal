@@ -140,7 +140,11 @@ $$;
 revoke all on function public.is_trip_member(uuid, uuid) from public;
 grant execute on function public.is_trip_member(uuid, uuid) to anon, authenticated;
 
--- Users: anyone authenticated can read; only own row write
+-- Users: authenticated users can read public profile fields, but not email addresses.
+-- Emails remain available to each user through Supabase Auth (auth.getUser()).
+revoke select on table public.users from public, anon, authenticated;
+grant select (id, name, avatar_url, created_at) on table public.users to authenticated;
+
 drop policy if exists "Users can read all profiles" on public.users;
 create policy "Users can read all profiles" on public.users for select using (auth.uid() is not null);
 drop policy if exists "Users can insert own profile" on public.users;
@@ -190,13 +194,46 @@ drop policy if exists "Creators can delete their trips" on public.trips;
 create policy "Creators can delete their trips" on public.trips for delete
   using (auth.uid() = creator_id);
 
+-- Invite-code membership is performed by this narrowly scoped RPC. Direct
+-- member inserts are disabled below; callers cannot join by guessing a trip ID.
+create or replace function public.join_trip_by_invite(code text)
+returns void
+language plpgsql security definer set search_path = public as $
+declare
+  uid uuid := auth.uid();
+  target_trip_id uuid;
+begin
+  if uid is null then
+    raise exception 'not authenticated';
+  end if;
+
+  select id into target_trip_id
+    from public.trips
+    where invite_code = code;
+
+  if target_trip_id is null then
+    raise exception 'invalid invite code';
+  end if;
+
+  insert into public.trip_members (trip_id, user_id, role)
+    values (target_trip_id, uid, 'member')
+    on conflict (trip_id, user_id) do nothing;
+end;
+$;
+revoke all on function public.join_trip_by_invite(text) from public;
+grant execute on function public.join_trip_by_invite(text) to authenticated;
+
 -- Trip members
 drop policy if exists "Members can view trip membership" on public.trip_members;
 create policy "Members can view trip membership" on public.trip_members for select
   using (public.is_trip_member(trip_id, auth.uid()));
 drop policy if exists "Users can join trips" on public.trip_members;
-create policy "Users can join trips" on public.trip_members for insert
-  with check (auth.uid() = user_id);
+drop policy if exists "Creators can add themselves" on public.trip_members;
+create policy "Creators can add themselves" on public.trip_members for insert
+  with check (
+    auth.uid() = user_id and role = 'creator' and
+    exists (select 1 from public.trips t where t.id = trip_id and t.creator_id = auth.uid())
+  );
 drop policy if exists "Creators can remove members" on public.trip_members;
 create policy "Creators can remove members" on public.trip_members for delete
   using (

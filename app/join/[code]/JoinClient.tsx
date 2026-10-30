@@ -19,9 +19,10 @@ interface TripInfo {
 
 interface Props {
   trip: TripInfo | null
+  inviteCode: string
 }
 
-export default function JoinClient({ trip }: Props) {
+export default function JoinClient({ trip, inviteCode }: Props) {
   const router = useRouter()
   const supabase = createClient()
   const [joining, setJoining] = useState(false)
@@ -67,12 +68,10 @@ export default function JoinClient({ trip }: Props) {
 
     if (!trip) return
 
-    const { error: insertErr } = await supabase
-      .from('trip_members')
-      .insert({ trip_id: trip.id, user_id: user.id, role: 'member' })
+    const { error: joinErr } = await supabase.rpc('join_trip_by_invite', { code: inviteCode })
 
-    if (insertErr && !insertErr.message.includes('duplicate')) {
-      setError(insertErr.message)
+    if (joinErr) {
+      setError(joinErr.message)
       setJoining(false)
       return
     }
